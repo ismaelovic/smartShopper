@@ -19,7 +19,6 @@
 - **Node.js:** JavaScript runtime.
 - **Express.js:** Web application framework for the API.
 - **Axios:** HTTP client for external API calls.
-- **Salling Group API:** Primary data source for Danish supermarket deals (specifically food waste/clearance).
 - **Google Gemini LLM:** Powers the intelligent product matching and deal comparison.
 - `node-cache`: In-memory caching for API responses.
 - `dotenv`: Environment variable management.
@@ -38,7 +37,6 @@
 - Node.js (LTS version recommended)
 - npm (comes with Node.js)
 - Xcode (for iOS development and simulator)
-- A Salling Group API Key
 - A Google Gemini API Key
 
 ### Setup
@@ -61,7 +59,6 @@ cd backend
 Create a `.env` file and add your API keys:
 
 ```
-SALLING_GROUP_API_KEY=YOUR_SALLING_GROUP_API_KEY
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 PORT=3000
 ```

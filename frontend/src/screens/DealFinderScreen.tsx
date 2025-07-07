@@ -1,41 +1,48 @@
-import React, { useState } from 'react';
-import { Image } from 'react-native';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import ProductSelection from '../components/ProductSelection'; // We'll create this
-import { fetchDeals } from '../services/apiService'; // We'll create this
+// frontend/src/screens/DealFinderScreen.tsx
+import React, { useState, useEffect } from 'react'; // Import useEffect
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, ActivityIndicator, Alert, Image } from 'react-native';
+import ProductSelection from '../components/ProductSelection';
+import DealerSelection from '../components/DealerSelection';
+import { fetchDeals } from '../services/apiService';
 
 const commonProducts = [
-'Mælk', 'Æg', 'Brød', 'Kyllingebryst', 'Havremælk', 'Tomater',
-'Æbler', 'Kartofler', 'Ost', 'Yoghurt', 'Kaffe', 'Pasta', 'Ris',
-'Smør', 'Laks', 'Appelsiner', 'Bananer', 'Løg', 'Hvidløg', 'Salat'
+'Milk', 'Eggs', 'Bread', 'Chicken Breast', 'Oat Milk', 'Tomatoes',
+'Apples', 'Potatoes', 'Cheese', 'Yogurt', 'Coffee', 'Pasta', 'Rice',
+'Butter', 'Salmon', 'Oranges', 'Bananas', 'Onions', 'Garlic', 'Lettuce'
+];
+
+// Placeholder for dealers. TODO: we need to fetch this from the API or a static list.
+const allDealers = [
+{ id: '11deC', name: 'REMA 1000' },
+{ id: '9ba51', name: 'Netto' },
+{ id: '71c90', name: 'Lidl' },
+{ id: '267e1m', name: 'MENY' },
+{ id: 'bdf5A', name: 'føtex' },
+{ id: '603dfL', name: 'Min Købmand' },
 ];
 
 const DealFinderScreen: React.FC = () => {
 const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-const [zipCode, setZipCode] = useState<string>('');
+const [selectedDealerIds, setSelectedDealerIds] = useState<string[]>([]); // New state for dealers
 const [loading, setLoading] = useState<boolean>(false);
-const [deals, setDeals] = useState<any>(null); // To store the fetched deals
+const [deals, setDeals] = useState<any>(null);
 
 const handleFindDeals = async () => {
   if (selectedProducts.length === 0) {
-  Alert.alert('Valg påkrævet', 'Vælg venligst mindst ét produkt.');
-    return;
-  }
-  if (!zipCode) {
-    Alert.alert('Post nummer er påkrævet', 'Indtast venligst dit post nummer.');
+    Alert.alert('Selection Required', 'Please select at least one product.');
     return;
   }
 
   setLoading(true);
-  setDeals(null); // Clear previous deals
+  setDeals(null);
   try {
-    const fetchedDeals = await fetchDeals(zipCode, selectedProducts);
-    console.info('Error fetching deals:', fetchDeals);
-    console.info('Fetched Deals:', fetchedDeals);
+    // Pass selectedDealerIds to fetchDeals
+    const fetchedDeals = await fetchDeals(selectedProducts, selectedDealerIds);
     setDeals(fetchedDeals);
+    // console.log('Fetched deals:', fetchedDeals);
   } catch (error: any) {
     console.error('Error fetching deals:', error);
-    Alert.alert('Error', error.message || 'Kunne ikke hente tilbud. Prøv igen senere.');
+    Alert.alert('Error', error.message || 'Failed to fetch deals. Please try again.');
   } finally {
     setLoading(false);
   }
@@ -43,21 +50,10 @@ const handleFindDeals = async () => {
 
 return (
   <ScrollView style={styles.container}>
-    <Text style={styles.header}>Find de bedste tilbud nær dig</Text>
+    <Text style={styles.header}>Find Your Best Grocery Deals</Text>
 
     <View style={styles.section}>
-      <Text style={styles.label}>Dit post nummer:</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="e.g., 8000"
-        keyboardType="numeric"
-        value={zipCode}
-        onChangeText={setZipCode}
-      />
-    </View>
-  
-    <View style={styles.section}>
-      <Text style={styles.label}>Vælg dine produkter:</Text>
+      <Text style={styles.label}>Select Products You Need:</Text>
       <ProductSelection
         products={commonProducts}
         selectedProducts={selectedProducts}
@@ -71,8 +67,24 @@ return (
       />
     </View>
 
+    {/* NEW: Dealer Selection Section */}
+    <View style={styles.section}>
+      <Text style={styles.label}>Select Supermarkets (Optional):</Text>
+      <DealerSelection
+        dealers={allDealers}
+        selectedDealerIds={selectedDealerIds}
+        onDealerToggle={(dealerId) => {
+          setSelectedDealerIds((prev) =>
+            prev.includes(dealerId)
+              ? prev.filter((id) => id !== dealerId)
+              : [...prev, dealerId]
+          );
+        }}
+      />
+    </View>
+
     <Button
-      title={loading ? "Finder tilbud..." : "Find tilbud"}
+      title={loading ? "Finding Deals..." : "Find Best Deals"}
       onPress={handleFindDeals}
       disabled={loading}
     />
@@ -81,38 +93,35 @@ return (
 
     {deals && (
       <View style={styles.resultsContainer}>
-        <Text style={styles.resultsHeader}>Dine tilbud:</Text>
+        <Text style={styles.resultsHeader}>Your Deals:</Text>
         {Object.keys(deals).length > 0 ? (
           Object.entries(deals).map(([productName, dealInfo]: [string, any]) => (
-         <View key={productName} style={styles.dealItem}>
-  <Text style={styles.dealProduct}>{productName}:</Text>
-  {dealInfo.status === 'not_found' ? (
-    <Text style={styles.notFound}>{dealInfo.message}</Text>
-  ) : (
-    <View style={styles.dealContentRow}>
-      {/* Product Info - takes 2/3 width */}
-      <View style={styles.dealInfoColumn}>
-        <Text style={styles.dealPrice}>Pris: {dealInfo.price.toFixed(2)} {dealInfo.currency}</Text>
-        {dealInfo.originalPrice && <Text style={styles.dealDiscount}>Vejl. pris: {dealInfo.originalPrice.toFixed(2)} (nedsat {dealInfo.discount}%)</Text>}
-        <Text style={styles.dealStore}>Butik: {dealInfo.store} ({dealInfo.storeAddress})</Text>
-        {dealInfo.expires && <Text style={styles.dealExpiry}>Expires: {new Date(dealInfo.expires).toLocaleDateString()}</Text>}
-      </View>
-
-      {/* Image - takes 1/3 width */}
-      {dealInfo.imageUrl && (
-        <View style={styles.dealImageColumn}>
-          <Image
-            source={{ uri: dealInfo.imageUrl }}
-            style={styles.dealImage} // dealImage style will be adjusted for fill
-          />
-        </View>
-      )}
-    </View>
-  )}
-</View>
+            <View key={productName} style={styles.dealItem}>
+              <Text style={styles.dealProduct}>{productName}:</Text>
+              {dealInfo.status === 'not_found' ? (
+                <Text style={styles.notFound}>{dealInfo.message}</Text>
+              ) : (
+                <View style={styles.dealContentRow}>
+                  <View style={styles.dealInfoColumn}>
+                    <Text style={styles.dealPrice}>Price: DKK {dealInfo.price.toFixed(2)}</Text>
+                    <Text style={styles.dealStore}>Store: {dealInfo.store.brand} ({dealInfo.store.address})</Text>
+                    {dealInfo.originalPrice && <Text style={styles.dealDiscount}>Original: DKK {dealInfo.originalPrice.toFixed(2)}</Text>}
+                    {dealInfo.validUntil && <Text style={styles.dealExpiry}>Expires: {new Date(dealInfo.validUntil).toLocaleDateString()}</Text>}
+                  </View>
+                  {dealInfo.imageUrl && (
+                    <View style={styles.dealImageColumn}>
+                      <Image
+                        source={{ uri: dealInfo.imageUrl }}
+                        style={styles.dealImage}
+                      />
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
           ))
         ) : (
-          <Text style={styles.noDeals}>No deals found for your selected products in this area.</Text>
+          <Text style={styles.noDeals}>No deals found for your selected products and dealers.</Text>
         )}
       </View>
     )}

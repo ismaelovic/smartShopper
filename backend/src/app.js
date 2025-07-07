@@ -26,7 +26,6 @@ app.use((err, req, res, next) => {
 
        app.listen(PORT, () => {
            console.log(`smartKurv Backend listening on port ${PORT}`);
-           console.log(`Salling Group API Key: ${process.env.SALLING_GROUP_API_KEY ? 'Configured' : 'NOT CONFIGURED'}`);
            console.log(`Gemini API Key: ${process.env.GEMINI_API_KEY ? 'Configured' : 'NOT CONFIGURED'}`);
        });
    } catch (error) {
