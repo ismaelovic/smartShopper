@@ -63,6 +63,7 @@ Example of desired JSON output structure:
 {
 "milk": {
   "product": "milk",
+  "currency": "DKK",
   "price": 8.5,
   "originalPrice": 12.95,
   "discount": 34.5,
@@ -75,6 +76,7 @@ Example of desired JSON output structure:
 },
 "eggs": {
   "product": "eggs",
+  "currency": "DKK",
   "price": 15.0,
   "originalPrice": 22.0,
   "discount": 31.8,

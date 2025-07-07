@@ -31,6 +31,7 @@ const handleFindDeals = async () => {
   try {
     const fetchedDeals = await fetchDeals(zipCode, selectedProducts);
     console.info('Error fetching deals:', fetchDeals);
+    console.info('Fetched Deals:', fetchedDeals);
     setDeals(fetchedDeals);
   } catch (error: any) {
     console.error('Error fetching deals:', error);
