@@ -9,7 +9,7 @@ debug_data/
 test/
 
 package-lock.json
-
+*-account.json
 ## Frontend
 
 # dependencies
@@ -47,3 +47,6 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# vscode
+.vscode/

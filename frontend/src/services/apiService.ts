@@ -1,18 +1,43 @@
-// frontend/src/services/apiService.ts
-import axios from 'axios';
+// frontend/src/services/apiService.ts (NEW)
+import { User } from 'firebase/auth'; // Import User type from Firebase Auth
 
-const API_BASE_URL = 'http://localhost:3000/api'; // Or your computer's IP for physical device
+// This function now needs the firebaseUser object and the API_BASE_URL
+export const fetchDeals = async (
+products: string[],
+dealerIds: string[],
+firebaseUser: User | null, // Accept the Firebase User object
+apiBaseUrl: string // Accept the API Base URL
+) => {
+if (!firebaseUser) {
+  throw new Error('User not authenticated. Cannot fetch deals.');
+}
 
-// Update fetchDeals to accept selectedDealerIds
-export const fetchDeals = async (selectedProducts: string[], selectedDealerIds: string[]) => {
 try {
-  const response = await axios.post(`${API_BASE_URL}/find-deals`, {
-    selectedProducts,
-    selectedDealerIds, // Pass the new parameter
+  // Get the ID token from the authenticated Firebase user
+  const idToken = await firebaseUser.getIdToken();
+  console.log('Fetching deals with ID token:', idToken.substring(0, 20) + '...'); // Log first 20 chars
+  console.log('API Base URL:', apiBaseUrl);
+  console.log(JSON.stringify({ products, dealerIds }, null, 2)); // Log request payload
+  const response = await fetch(`${apiBaseUrl}/api/find-deals`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      // 'Authorization': `Bearer ${idToken}`, // Attach the Firebase ID token
+    },
+    body: JSON.stringify({   
+      selectedProducts: products,
+      selectedDealerIds: dealerIds 
+    })
   });
-  return response.data;
-} catch (error: any) {
-  console.error('API call failed:', error.response?.data || error.message);
-  throw new Error(error.response?.data?.error || 'Network error. Could not connect to backend.');
+  console.log('Response status:', response);
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to fetch deals');
+  }
+
+  return await response.json();
+} catch (error) {
+  console.error('Error in fetchDeals:', error);
+  throw error;
 }
 };

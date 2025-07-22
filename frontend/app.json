@@ -24,6 +24,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "main": "index.js",
+    "extra": {
+      "firebaseConfig": {
+        "apiKey": "AIzaSyAlqX4ZqK38Ye2I7WBHM5OYZ4tnT0JkZ8Q",
+        "authDomain": "smartshopper-e7b6f.firebaseapp.com",
+        "projectId": "smartshopper-e7b6f",
+        "storageBucket": "smartshopper-e7b6f.firebasestorage.app",
+        "messagingSenderId": "275581335776",
+        "appId": "1:275581335776:web:7d84a2e411b4f975893885",
+        "measurementId": "G-J8J9152KYH"
+      }
     }
   }
 }

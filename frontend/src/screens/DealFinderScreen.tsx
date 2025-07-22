@@ -1,9 +1,16 @@
 // frontend/src/screens/DealFinderScreen.tsx
-import React, { useState, useEffect } from 'react'; // Import useEffect
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView, ActivityIndicator, Alert, Image } from 'react-native';
 import ProductSelection from '../components/ProductSelection';
 import DealerSelection from '../components/DealerSelection';
 import { fetchDeals } from '../services/apiService';
+import { User } from 'firebase/auth'; // Import User type
+
+// Define props interface for DealFinderScreen
+interface DealFinderScreenProps {
+firebaseUser: User | null; // The Firebase user object
+API_BASE_URL: string; // The backend API base URL
+}
 
 const commonProducts = [
 'Milk', 'Eggs', 'Bread', 'Chicken Breast', 'Oat Milk', 'Tomatoes',
@@ -11,7 +18,6 @@ const commonProducts = [
 'Butter', 'Salmon', 'Oranges', 'Bananas', 'Onions', 'Garlic', 'Lettuce'
 ];
 
-// Placeholder for dealers. TODO: we need to fetch this from the API or a static list.
 const allDealers = [
 { id: '11deC', name: 'REMA 1000' },
 { id: '9ba51', name: 'Netto' },
@@ -21,9 +27,10 @@ const allDealers = [
 { id: '603dfL', name: 'Min Købmand' },
 ];
 
-const DealFinderScreen: React.FC = () => {
+// Accept props here
+const DealFinderScreen: React.FC<DealFinderScreenProps> = ({ firebaseUser, API_BASE_URL }) => {
 const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-const [selectedDealerIds, setSelectedDealerIds] = useState<string[]>([]); // New state for dealers
+const [selectedDealerIds, setSelectedDealerIds] = useState<string[]>([]);
 const [loading, setLoading] = useState<boolean>(false);
 const [deals, setDeals] = useState<any>(null);
 
@@ -33,13 +40,20 @@ const handleFindDeals = async () => {
     return;
   }
 
+  // Ensure user is authenticated before trying to fetch deals
+  if (!firebaseUser) {
+    Alert.alert('Authentication Required', 'Please log in to find deals.');
+    return;
+  }
+
   setLoading(true);
   setDeals(null);
   try {
-    // Pass selectedDealerIds to fetchDeals
-    const fetchedDeals = await fetchDeals(selectedProducts, selectedDealerIds);
+    // Pass firebaseUser and API_BASE_URL to fetchDeals
+    console.log('Fetching deals for products:', selectedProducts, 'and dealers:', selectedDealerIds);
+    const fetchedDeals = await fetchDeals(selectedProducts, selectedDealerIds, firebaseUser, API_BASE_URL);
     setDeals(fetchedDeals);
-    // console.log('Fetched deals:', fetchedDeals);
+    console.log('Fetched deals:', fetchedDeals);
   } catch (error: any) {
     console.error('Error fetching deals:', error);
     Alert.alert('Error', error.message || 'Failed to fetch deals. Please try again.');
@@ -67,7 +81,6 @@ return (
       />
     </View>
 
-    {/* NEW: Dealer Selection Section */}
     <View style={styles.section}>
       <Text style={styles.label}>Select Supermarkets (Optional):</Text>
       <DealerSelection
@@ -204,36 +217,31 @@ dealItem: {
   paddingBottom: 10,
   borderBottomWidth: 1,
   borderBottomColor: '#eee',
-  // Add padding/border to the item itself if you want the whole box to be distinct
-  padding: 10, // Added padding to the dealItem
+  padding: 10,
   borderRadius: 8,
-  backgroundColor: '#fff', // Added background for better visual separation
-  shadowColor: '#000', // Optional: add a subtle shadow
+  backgroundColor: '#fff',
+  shadowColor: '#000',
   shadowOffset: { width: 0, height: 1 },
   shadowOpacity: 0.1,
   shadowRadius: 2,
-  elevation: 2, // For Android shadow
+  elevation: 2,
 },
-
 dealContentRow: {
-  flexDirection: 'row', // Arrange children horizontally
-  alignItems: 'center', // Vertically align items in the center
-  marginTop: 10, // Space between product name and content row
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginTop: 10,
 },
-
 dealInfoColumn: {
-  flex: 2, // Takes 2 parts of the available space (2/3)
-  paddingRight: 10, // Space between info and image
+  flex: 2,
+  paddingRight: 10,
 },
-
 dealImageColumn: {
-  flex: 1, // Takes 1 part of the available space (1/3)
-  alignItems: 'flex-end', // Align image to the right within its column
+  flex: 1,
+  alignItems: 'flex-end',
 },
-
 dealImage: {
-  width: '100%', // Make image fill its column
-  height: 80,    // Fixed height for the image
+  width: '100%',
+  height: 80,
   resizeMode: 'contain',
   borderRadius: 5,
 },

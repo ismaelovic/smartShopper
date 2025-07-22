@@ -53,8 +53,39 @@ async function findDeals(req, res) {
       console.error('Error in /find-deals endpoint:', error.message);
       res.status(500).json({ error: error.message });
   }
+}   
+
+async function getAllDeals(req, res) {
+  try {
+      const allDeals = await tjekApiService.fetchAllDeals();
+      res.json(allDeals);
+  } catch (error) {
+      console.error('Error fetching all deals:', error.message);
+      res.status(500).json({ error: error.message });
+  }
 }
 
+// async function getUserProfile(req, res) {
+//   // Implementation for getting user profile
+//     const userId = req.params.id;
+//     if (!userId) {
+//         return res.status(400).json({ error: 'User ID is required.' });
+//     }
+//     else {
+//         // Fetch user profile logic here
+//         return res.status(200).json({ message: `User profile for ID ${userId} fetched successfully.` }); // Example response
+//     }
+// }
+// async function updateUserProfile(req, res) {
+//   // Implementation for updating user profile
+//     return res.status(200).json({ message: 'User profile updated successfully.' }); // Example response
+// }
+// async function deleteUserProfile(req, res) {
+//   // Implementation for deleting user profile
+//   return res.status(200).json({ message: 'User profile deleted successfully.' }); // Example response
+// }
+
 module.exports = {
-  findDeals
+    findDeals,
+    getAllDeals
 };
