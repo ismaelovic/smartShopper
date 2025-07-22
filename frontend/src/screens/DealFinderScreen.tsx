@@ -1,22 +1,23 @@
 // frontend/src/screens/DealFinderScreen.tsx
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, ActivityIndicator, Alert, Image } from 'react-native';
-import ProductSelection from '../components/ProductSelection';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, Button, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, TouchableOpacity } from 'react-native';
 import DealerSelection from '../components/DealerSelection';
 import { fetchDeals } from '../services/apiService';
-import { User } from 'firebase/auth'; // Import User type
+import { User } from 'firebase/auth';
 
-// Define props interface for DealFinderScreen
 interface DealFinderScreenProps {
-firebaseUser: User | null; // The Firebase user object
-API_BASE_URL: string; // The backend API base URL
+firebaseUser: User | null;
+API_BASE_URL: string;
 }
 
-const commonProducts = [
-'Milk', 'Eggs', 'Bread', 'Chicken Breast', 'Oat Milk', 'Tomatoes',
-'Apples', 'Potatoes', 'Cheese', 'Yogurt', 'Coffee', 'Pasta', 'Rice',
-'Butter', 'Salmon', 'Oranges', 'Bananas', 'Onions', 'Garlic', 'Lettuce'
-];
+// Interface for frontend (and implied backend structure)
+interface WatchlistItem {
+id: string;
+productName: string; // This is the single, canonical name (e.g., "Sødmælk", "Arla Økologisk Letmælk 1L")
+productCategory: string; // e.g., "Dairy", "Meat"
+displayImageUrl?: string | null; // Optional image for display
+// Other original deal fields if needed for display or context (e.g., originalDealId, originalDealerName)
+}
 
 const allDealers = [
 { id: '11deC', name: 'REMA 1000' },
@@ -27,58 +28,128 @@ const allDealers = [
 { id: '603dfL', name: 'Min Købmand' },
 ];
 
-// Accept props here
 const DealFinderScreen: React.FC<DealFinderScreenProps> = ({ firebaseUser, API_BASE_URL }) => {
-const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+const [userWatchlist, setUserWatchlist] = useState<WatchlistItem[]>([]);
+// Store the llmProductName of selected items for fetching deals
+const [selectedLlmProductNames, setSelectedLlmProductNames] = useState<string[]>([]);
+const [loadingWatchlist, setLoadingWatchlist] = useState(true);
 const [selectedDealerIds, setSelectedDealerIds] = useState<string[]>([]);
-const [loading, setLoading] = useState<boolean>(false);
+const [loadingDeals, setLoadingDeals] = useState<boolean>(false);
 const [deals, setDeals] = useState<any>(null);
 
+const fetchUserWatchlist = useCallback(async () => {
+  if (!firebaseUser) {
+    setLoadingWatchlist(false);
+    return;
+  }
+  setLoadingWatchlist(true);
+  try {
+    const idToken = await firebaseUser.getIdToken();
+    const response = await fetch(`${API_BASE_URL}/users/${firebaseUser.uid}/watchlist`, {
+      headers: {
+        'Authorization': `Bearer ${idToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch watchlist');
+    }
+
+    const data: WatchlistItem[] = await response.json();
+    console.log('Fetched user watchlist:', data);
+    setUserWatchlist(data);
+    // Initialize selectedLlmProductNames with all llmProductNames from the fetched watchlist
+    setSelectedLlmProductNames(data.map(item => item.productName));
+  } catch (error: any) {
+    console.error('Error fetching user watchlist:', error);
+    Alert.alert('Error', `Failed to load your watchlist: ${error.message}`);
+  } finally {
+    setLoadingWatchlist(false);
+  }
+}, [firebaseUser, API_BASE_URL]);
+
+useEffect(() => {
+  fetchUserWatchlist();
+}, [fetchUserWatchlist]);
+
+// Toggle selection of a watchlist item based on its llmProductName
+const handleToggleWatchlistItem = (llmProductName: string) => {
+  setSelectedLlmProductNames((prev) =>
+    prev.includes(llmProductName)
+      ? prev.filter((name) => name !== llmProductName)
+      : [...prev, llmProductName]
+  );
+};
+
 const handleFindDeals = async () => {
-  if (selectedProducts.length === 0) {
-    Alert.alert('Selection Required', 'Please select at least one product.');
+  if (selectedLlmProductNames.length === 0) {
+    Alert.alert('Selection Required', 'Please select at least one product from your watchlist.');
     return;
   }
 
-  // Ensure user is authenticated before trying to fetch deals
   if (!firebaseUser) {
     Alert.alert('Authentication Required', 'Please log in to find deals.');
     return;
   }
 
-  setLoading(true);
+  setLoadingDeals(true);
   setDeals(null);
   try {
-    // Pass firebaseUser and API_BASE_URL to fetchDeals
-    console.log('Fetching deals for products:', selectedProducts, 'and dealers:', selectedDealerIds);
-    const fetchedDeals = await fetchDeals(selectedProducts, selectedDealerIds, firebaseUser, API_BASE_URL);
+    console.log('Fetching deals for LLM products:', selectedLlmProductNames, 'and dealers:', selectedDealerIds);
+    // Pass selectedLlmProductNames to fetchDeals
+    const fetchedDeals = await fetchDeals(selectedLlmProductNames, selectedDealerIds, firebaseUser, API_BASE_URL);
     setDeals(fetchedDeals);
     console.log('Fetched deals:', fetchedDeals);
   } catch (error: any) {
     console.error('Error fetching deals:', error);
     Alert.alert('Error', error.message || 'Failed to fetch deals. Please try again.');
   } finally {
-    setLoading(false);
+    setLoadingDeals(false);
   }
 };
+
+if (loadingWatchlist) {
+  return (
+    <View style={styles.centered}>
+      <ActivityIndicator size="large" color="#0000ff" />
+      <Text>Loading your watchlist...</Text>
+    </View>
+  );
+}
 
 return (
   <ScrollView style={styles.container}>
     <Text style={styles.header}>Find Your Best Grocery Deals</Text>
 
     <View style={styles.section}>
-      <Text style={styles.label}>Select Products You Need:</Text>
-      <ProductSelection
-        products={commonProducts}
-        selectedProducts={selectedProducts}
-        onProductToggle={(product) => {
-          setSelectedProducts((prev) =>
-            prev.includes(product)
-              ? prev.filter((p) => p !== product)
-              : [...prev, product]
-          );
-        }}
-      />
+      <Text style={styles.label}>Your Watchlist Products:</Text>
+      {userWatchlist.length === 0 ? (
+        <Text style={styles.noWatchlistText}>
+          Your watchlist is empty. Add items from the onboarding screen or a future "Add to Watchlist" feature!
+        </Text>
+      ) : (
+        <View style={styles.productsGrid}>
+          {userWatchlist.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.productButton,
+                selectedLlmProductNames.includes(item.productName) && styles.productButtonSelected,
+              ]}
+              onPress={() => handleToggleWatchlistItem(item.productName)}
+            >
+              {item.displayImageUrl && (
+                <Image source={{ uri: item.displayImageUrl }} style={styles.productImage} />
+              )}
+              <Text style={styles.productButtonText}>{item.productName}</Text>
+              {item.productCategory && (
+                <Text style={styles.productButtonCategory}>{item.productCategory}</Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
     </View>
 
     <View style={styles.section}>
@@ -97,47 +168,48 @@ return (
     </View>
 
     <Button
-      title={loading ? "Finding Deals..." : "Find Best Deals"}
+      title={loadingDeals ? "Finding Deals..." : "Find Best Deals"}
       onPress={handleFindDeals}
-      disabled={loading}
+      disabled={loadingDeals || selectedLlmProductNames.length === 0}
     />
 
-    {loading && <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />}
+    {loadingDeals && <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />}
 
-    {deals && (
-      <View style={styles.resultsContainer}>
-        <Text style={styles.resultsHeader}>Your Deals:</Text>
-        {Object.keys(deals).length > 0 ? (
-          Object.entries(deals).map(([productName, dealInfo]: [string, any]) => (
-            <View key={productName} style={styles.dealItem}>
-              <Text style={styles.dealProduct}>{productName}:</Text>
-              {dealInfo.status === 'not_found' ? (
-                <Text style={styles.notFound}>{dealInfo.message}</Text>
-              ) : (
-                <View style={styles.dealContentRow}>
-                  <View style={styles.dealInfoColumn}>
-                    <Text style={styles.dealPrice}>Price: DKK {dealInfo.price.toFixed(2)}</Text>
-                    <Text style={styles.dealStore}>Store: {dealInfo.store.brand} ({dealInfo.store.address})</Text>
-                    {dealInfo.originalPrice && <Text style={styles.dealDiscount}>Original: DKK {dealInfo.originalPrice.toFixed(2)}</Text>}
-                    {dealInfo.validUntil && <Text style={styles.dealExpiry}>Expires: {new Date(dealInfo.validUntil).toLocaleDateString()}</Text>}
-                  </View>
-                  {dealInfo.imageUrl && (
-                    <View style={styles.dealImageColumn}>
-                      <Image
-                        source={{ uri: dealInfo.imageUrl }}
-                        style={styles.dealImage}
-                      />
-                    </View>
-                  )}
+ {deals && (
+  <View style={styles.resultsContainer}>
+    <Text style={styles.resultsHeader}>Your Deals:</Text>
+    {Object.keys(deals).length > 0 ? (
+      Object.entries(deals).map(([requestedProductName, dealInfo]: [string, any]) => ( // Renamed 'productName' to 'requestedProductName' for clarity
+        <View key={requestedProductName} style={styles.dealItem}>
+          {/* Display the actual product description from dealInfo */}
+          <Text style={styles.dealProduct}>{dealInfo.itemNameFound || requestedProductName}:</Text>
+          {dealInfo.status === 'not_found' ? (
+            <Text style={styles.notFound}>{dealInfo.message}</Text>
+          ) : (
+            <View style={styles.dealContentRow}>
+              <View style={styles.dealInfoColumn}>
+                <Text style={styles.dealPrice}>Pris: DKK {dealInfo.price.toFixed(2)}</Text>
+                <Text style={styles.dealStore}>Store: ({dealInfo.storeAddress})</Text>
+                {dealInfo.originalPrice && <Text style={styles.dealDiscount}>Original: DKK {dealInfo.originalPrice.toFixed(2)}</Text>}
+                {dealInfo.validUntil && <Text style={styles.dealExpiry}>Expires: {new Date(dealInfo.validUntil).toLocaleDateString()}</Text>}
+              </View>
+              {dealInfo.imageUrl && (
+                <View style={styles.dealImageColumn}>
+                  <Image
+                    source={{ uri: dealInfo.imageUrl }}
+                    style={styles.dealImage}
+                  />
                 </View>
               )}
             </View>
-          ))
-        ) : (
-          <Text style={styles.noDeals}>No deals found for your selected products and dealers.</Text>
-        )}
-      </View>
+          )}
+        </View>
+      ))
+    ) : (
+      <Text style={styles.noDeals}>No deals found for your selected products and dealers.</Text>
     )}
+  </View>
+)}
   </ScrollView>
 );
 };
@@ -147,6 +219,11 @@ container: {
   flex: 1,
   padding: 20,
   backgroundColor: '#f8f8f8',
+},
+centered: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
 },
 header: {
   fontSize: 24,
@@ -164,13 +241,51 @@ label: {
   marginBottom: 8,
   color: '#555',
 },
-input: {
-  height: 40,
-  borderColor: '#ddd',
+productsGrid: {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  justifyContent: 'center',
+  marginBottom: 10,
+},
+productButton: {
+  backgroundColor: '#e0e0e0',
+  paddingVertical: 10,
+  paddingHorizontal: 15,
+  borderRadius: 20,
+  margin: 5,
   borderWidth: 1,
+  borderColor: '#ccc',
+  alignItems: 'center',
+  flexDirection: 'row', // Allow image and text to be side-by-side
+},
+productButtonSelected: {
+  backgroundColor: '#007bff',
+  borderColor: '#007bff',
+},
+productImage: { // New style for product image
+  width: 40,
+  height: 40,
+  borderRadius: 20,
+  marginRight: 8,
+  resizeMode: 'contain',
+},
+productButtonText: {
+  fontSize: 16,
+  fontWeight: 'bold',
+  color: '#333',
+},
+productButtonCategory: {
+  fontSize: 12,
+  color: '#666',
+  marginLeft: 5, // Small margin between name and category
+},
+noWatchlistText: {
+  fontSize: 14,
+  color: '#888',
+  textAlign: 'center',
+  padding: 10,
+  backgroundColor: '#f0f0f0',
   borderRadius: 8,
-  paddingHorizontal: 10,
-  backgroundColor: '#fff',
 },
 loader: {
   marginTop: 20,

@@ -58,7 +58,7 @@ Example of desired JSON output structure:
   "originalPrice": 12.95,
   "discount": 34.5,
   "store": "Netto",
-  "storeAddress": "Vesterbrogade 1, 8000 Aarhus C", // Or "Nationwide offer (Tjek.com API)"
+  "storeAddress": "Vesterbrogade 1, 8000 Aarhus C", // Or "Nationwide offer"
   "storeId": "store_id_123",
   "itemNameFound": "Økologisk Letmælk",
   "imageUrl": "http://example.com/milk.jpg",

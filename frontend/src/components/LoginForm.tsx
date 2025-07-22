@@ -58,6 +58,7 @@ container: {
   backgroundColor: '#f0f0f0',
   borderRadius: 10,
   alignItems: 'center',
+  alignSelf: 'center',
 },
 title: {
   fontSize: 24,

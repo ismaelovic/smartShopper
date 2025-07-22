@@ -21,7 +21,7 @@ const handleSubmit = async () => {
   const result = await onRegister({ email, password, username, displayName });
 
   if (result.success) {
-    Alert.alert('Success', 'Registration successful! You are now logged in.');
+    Alert.alert('Success', 'Registration successful! You are now logged in. You can edit your profile bio under profile settings.');
     setEmail('');
     setPassword('');
     setUsername('');
@@ -75,6 +75,7 @@ container: {
   borderRadius: 10,
   marginBottom: 20,
   alignItems: 'center',
+  alignSelf: 'center',
 },
 title: {
   fontSize: 24,

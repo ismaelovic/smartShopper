@@ -13,7 +13,7 @@ app.use(express.json()); // Middleware to parse JSON request bodies
 
 // Mount API routes
 app.use('/api', dealRoutes); // All deal routes will be prefixed with /api
-app.use('/user', userRoutes); // All user routes will be prefixed with /api
+app.use('/users', userRoutes); // All user routes will be prefixed with /api
 
 // Global error handler (optional, but good practice)
 app.use((err, req, res, next) => {

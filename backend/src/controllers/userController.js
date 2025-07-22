@@ -5,8 +5,8 @@ const { db, auth, admin } = require('../components/firebase-admin');
 const registerUser = async (req, res) => {
   const { uid, email, displayName, username, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required!' });
+  if (!email) {
+    return res.status(400).json({ message: 'A valid email is required!' });
   }
 
   try {
@@ -153,6 +153,8 @@ const verifyToken = async (req, res, next) => {
     return res.status(401).json({ error: 'Invalid token' });
   }
 };
+
+
 
 module.exports = {
   registerUser,
