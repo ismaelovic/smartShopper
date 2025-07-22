@@ -19,6 +19,35 @@ displayImageUrl?: string | null; // Optional image for display
 // Other original deal fields if needed for display or context (e.g., originalDealId, originalDealerName)
 }
 
+// Define the structure of a single deal object returned from your backend
+interface DealInfo {
+productDescription: string; // The specific product description from the deal
+price: number;
+store: string; 
+storeAddress: string; 
+originalPrice?: number;
+validUntil?: string;
+imageUrl?: string; 
+// ... other fields from your API payload that you might want to store
+id: string; // The unique ID of the deal from the external API (e.g., "phxCnkQY9jZarfee4IAud")
+heading: string; // The original heading from the external API
+description: string; // The original description from the external API
+dealer_id: string; // The dealer ID from the external API
+dealer: { // The dealer object from the external API
+  name: string;
+  // ... other dealer details
+};
+pricing: {
+  price: number;
+  // ...
+};
+images: {
+  thumb: string;
+  // ...
+};
+// ... any other fields from the raw deal payload you pass to the backend
+}
+
 const allDealers = [
 { id: '11deC', name: 'REMA 1000' },
 { id: '9ba51', name: 'Netto' },
@@ -30,12 +59,11 @@ const allDealers = [
 
 const DealFinderScreen: React.FC<DealFinderScreenProps> = ({ firebaseUser, API_BASE_URL }) => {
 const [userWatchlist, setUserWatchlist] = useState<WatchlistItem[]>([]);
-// Store the llmProductName of selected items for fetching deals
-const [selectedLlmProductNames, setSelectedLlmProductNames] = useState<string[]>([]);
+const [selectedProductNames, setSelectedProductNames] = useState<string[]>([]);
 const [loadingWatchlist, setLoadingWatchlist] = useState(true);
 const [selectedDealerIds, setSelectedDealerIds] = useState<string[]>([]);
 const [loadingDeals, setLoadingDeals] = useState<boolean>(false);
-const [deals, setDeals] = useState<any>(null);
+const [deals, setDeals] = useState<Record<string, DealInfo> | null>(null); // Use Record<string, DealInfo> for better typing
 
 const fetchUserWatchlist = useCallback(async () => {
   if (!firebaseUser) {
@@ -60,7 +88,7 @@ const fetchUserWatchlist = useCallback(async () => {
     console.log('Fetched user watchlist:', data);
     setUserWatchlist(data);
     // Initialize selectedLlmProductNames with all llmProductNames from the fetched watchlist
-    setSelectedLlmProductNames(data.map(item => item.productName));
+    setSelectedProductNames(data.map(item => item.productName));
   } catch (error: any) {
     console.error('Error fetching user watchlist:', error);
     Alert.alert('Error', `Failed to load your watchlist: ${error.message}`);
@@ -75,7 +103,7 @@ useEffect(() => {
 
 // Toggle selection of a watchlist item based on its llmProductName
 const handleToggleWatchlistItem = (llmProductName: string) => {
-  setSelectedLlmProductNames((prev) =>
+  setSelectedProductNames((prev) =>
     prev.includes(llmProductName)
       ? prev.filter((name) => name !== llmProductName)
       : [...prev, llmProductName]
@@ -83,7 +111,7 @@ const handleToggleWatchlistItem = (llmProductName: string) => {
 };
 
 const handleFindDeals = async () => {
-  if (selectedLlmProductNames.length === 0) {
+  if (selectedProductNames.length === 0) {
     Alert.alert('Selection Required', 'Please select at least one product from your watchlist.');
     return;
   }
@@ -96,9 +124,8 @@ const handleFindDeals = async () => {
   setLoadingDeals(true);
   setDeals(null);
   try {
-    console.log('Fetching deals for LLM products:', selectedLlmProductNames, 'and dealers:', selectedDealerIds);
-    // Pass selectedLlmProductNames to fetchDeals
-    const fetchedDeals = await fetchDeals(selectedLlmProductNames, selectedDealerIds, firebaseUser, API_BASE_URL);
+    console.log('Fetching deals for LLM products:', selectedProductNames, 'and dealers:', selectedDealerIds);
+    const fetchedDeals = await fetchDeals(selectedProductNames, selectedDealerIds, firebaseUser, API_BASE_URL);
     setDeals(fetchedDeals);
     console.log('Fetched deals:', fetchedDeals);
   } catch (error: any) {
@@ -106,6 +133,43 @@ const handleFindDeals = async () => {
     Alert.alert('Error', error.message || 'Failed to fetch deals. Please try again.');
   } finally {
     setLoadingDeals(false);
+  }
+};
+
+// NEW: Function to add a specific deal to watchlist
+const handleAddDealToWatchlist = async (deal: DealInfo) => {
+  if (!firebaseUser) {
+    Alert.alert('Authentication Required', 'Please log in to add items to your watchlist.');
+    return;
+  }
+
+
+
+  try {
+    const idToken = await firebaseUser.getIdToken();
+    // Send the entire deal object to the backend.
+    // The backend's addItemToWatchlist will extract what it needs (heading, description, etc.)
+    const response = await fetch(`${API_BASE_URL}/users/${firebaseUser.uid}/watchlist`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`,
+      },
+      body: JSON.stringify(deal), // Send the full deal object
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to add deal to watchlist');
+    }
+
+    const result = await response.json();
+    Alert.alert('Success', result.message || 'Deal added to watchlist!');
+    // Optionally, re-fetch the watchlist to update the UI
+    fetchUserWatchlist();
+  } catch (error: any) {
+    console.error('Error adding deal to watchlist:', error);
+    Alert.alert('Error', `Failed to add deal to watchlist: ${error.message}`);
   }
 };
 
@@ -135,7 +199,7 @@ return (
               key={item.id}
               style={[
                 styles.productButton,
-                selectedLlmProductNames.includes(item.productName) && styles.productButtonSelected,
+                selectedProductNames.includes(item.productName) && styles.productButtonSelected,
               ]}
               onPress={() => handleToggleWatchlistItem(item.productName)}
             >
@@ -170,46 +234,54 @@ return (
     <Button
       title={loadingDeals ? "Finding Deals..." : "Find Best Deals"}
       onPress={handleFindDeals}
-      disabled={loadingDeals || selectedLlmProductNames.length === 0}
+      disabled={loadingDeals || selectedProductNames.length === 0}
     />
 
     {loadingDeals && <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />}
 
- {deals && (
-  <View style={styles.resultsContainer}>
-    <Text style={styles.resultsHeader}>Your Deals:</Text>
-    {Object.keys(deals).length > 0 ? (
-      Object.entries(deals).map(([requestedProductName, dealInfo]: [string, any]) => ( // Renamed 'productName' to 'requestedProductName' for clarity
-        <View key={requestedProductName} style={styles.dealItem}>
-          {/* Display the actual product description from dealInfo */}
-          <Text style={styles.dealProduct}>{dealInfo.itemNameFound || requestedProductName}:</Text>
-          {dealInfo.status === 'not_found' ? (
-            <Text style={styles.notFound}>{dealInfo.message}</Text>
-          ) : (
-            <View style={styles.dealContentRow}>
-              <View style={styles.dealInfoColumn}>
-                <Text style={styles.dealPrice}>Pris: DKK {dealInfo.price.toFixed(2)}</Text>
-                <Text style={styles.dealStore}>Store: ({dealInfo.storeAddress})</Text>
-                {dealInfo.originalPrice && <Text style={styles.dealDiscount}>Original: DKK {dealInfo.originalPrice.toFixed(2)}</Text>}
-                {dealInfo.validUntil && <Text style={styles.dealExpiry}>Expires: {new Date(dealInfo.validUntil).toLocaleDateString()}</Text>}
-              </View>
-              {dealInfo.imageUrl && (
-                <View style={styles.dealImageColumn}>
-                  <Image
-                    source={{ uri: dealInfo.imageUrl }}
-                    style={styles.dealImage}
-                  />
+    {deals && (
+      <View style={styles.resultsContainer}>
+        <Text style={styles.resultsHeader}>Your Deals:</Text>
+        {Object.keys(deals).length > 0 ? (
+          Object.entries(deals).map(([requestedProductName, dealInfo]: [string, any]) => (
+            <View key={requestedProductName} style={styles.dealItem}>
+              <Text style={styles.dealProduct}>{dealInfo.productDescription || requestedProductName}:</Text>
+              {dealInfo.status === 'not_found' ? (
+                <Text style={styles.notFound}>{dealInfo.message}</Text>
+              ) : (
+                <View> {/* Wrap content in a View to allow for the button */}
+                  <View style={styles.dealContentRow}>
+                    <View style={styles.dealInfoColumn}>
+                      <Text style={styles.dealPrice}>Price: DKK {dealInfo.price.toFixed(2)}</Text>
+                      <Text style={styles.dealStore}>Store: {dealInfo.store} ({dealInfo.storeAddress})</Text>
+                      {dealInfo.originalPrice && <Text style={styles.dealDiscount}>Original: DKK {dealInfo.originalPrice.toFixed(2)}</Text>}
+                      {dealInfo.validUntil && <Text style={styles.dealExpiry}>Expires: {new Date(dealInfo.validUntil).toLocaleDateString()}</Text>}
+                    </View>
+                    {dealInfo.imageUrl && (
+                      <View style={styles.dealImageColumn}>
+                        <Image
+                          source={{ uri: dealInfo.imageUrl }}
+                          style={styles.dealImage}
+                        />
+                      </View>
+                    )}
+                  </View>
+                  {/* NEW: Add to Watchlist Button */}
+                  <TouchableOpacity
+                    style={styles.addToWatchlistButton}
+                    onPress={() => handleAddDealToWatchlist(dealInfo)} // Pass the entire dealInfo object
+                  >
+                    <Text style={styles.addToWatchlistButtonText}>Add to Watchlist</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
-          )}
-        </View>
-      ))
-    ) : (
-      <Text style={styles.noDeals}>No deals found for your selected products and dealers.</Text>
+          ))
+        ) : (
+          <Text style={styles.noDeals}>No deals found for your selected products and dealers.</Text>
+        )}
+      </View>
     )}
-  </View>
-)}
   </ScrollView>
 );
 };
@@ -256,13 +328,13 @@ productButton: {
   borderWidth: 1,
   borderColor: '#ccc',
   alignItems: 'center',
-  flexDirection: 'row', // Allow image and text to be side-by-side
+  flexDirection: 'row',
 },
 productButtonSelected: {
   backgroundColor: '#007bff',
   borderColor: '#007bff',
 },
-productImage: { // New style for product image
+productImage: {
   width: 40,
   height: 40,
   borderRadius: 20,
@@ -277,7 +349,7 @@ productButtonText: {
 productButtonCategory: {
   fontSize: 12,
   color: '#666',
-  marginLeft: 5, // Small margin between name and category
+  marginLeft: 5,
 },
 noWatchlistText: {
   fontSize: 14,
@@ -370,7 +442,20 @@ noDeals: {
   color: '#999',
   textAlign: 'center',
   paddingVertical: 20,
-}
+},
+addToWatchlistButton: { // New style for the button
+  backgroundColor: '#28a745',
+  paddingVertical: 8,
+  paddingHorizontal: 12,
+  borderRadius: 5,
+  marginTop: 10,
+  alignSelf: 'flex-start', // Align button to the left
+},
+addToWatchlistButtonText: { // New style for button text
+  color: '#fff',
+  fontSize: 14,
+  fontWeight: 'bold',
+},
 });
 
 export default DealFinderScreen;
