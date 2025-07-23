@@ -3,6 +3,7 @@ require('dotenv').config(); // Load environment variables
 const express = require('express');
 const dealRoutes = require('./routes/dealRoutes');
 const userRoutes = require('./routes/userRoutes');
+const watchlistRoutes = require('./routes/watchlistRoutes'); 
 const { initializeFileLogger } = require('./utils/fileLogger');
 require('./components/firebase-admin');
 
@@ -14,6 +15,7 @@ app.use(express.json()); // Middleware to parse JSON request bodies
 // Mount API routes
 app.use('/api', dealRoutes); // All deal routes will be prefixed with /api
 app.use('/users', userRoutes); // All user routes will be prefixed with /api
+app.use('/watchlist', watchlistRoutes); // All watchlist routes will be prefixed with /watchlist
 
 // Global error handler (optional, but good practice)
 app.use((err, req, res, next) => {
