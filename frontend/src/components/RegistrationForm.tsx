@@ -1,12 +1,14 @@
 // components/RegistrationForm.jsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { colors } from '../styles/colors';
 
 type RegistrationFormProps = {
   onRegister: (params: { email: string; password: string; username?: string; displayName?: string }) => Promise<{ success: boolean; error?: string }>;
+  onSwitchToLogin: () => void;
 };
 
-export default function RegistrationForm({ onRegister }: RegistrationFormProps) {
+export default function RegistrationForm({ onRegister, onSwitchToLogin }: RegistrationFormProps) {
 const [email, setEmail] = useState('');
 const [password, setPassword] = useState('');
 const [username, setUsername] = useState(''); // Optional, if you want a separate username field
@@ -20,15 +22,10 @@ const handleSubmit = async () => {
 
   const result = await onRegister({ email, password, username, displayName });
 
-  if (result.success) {
-    Alert.alert('Success', 'Registration successful! You are now logged in. You can edit your profile bio under profile settings.');
-    setEmail('');
-    setPassword('');
-    setUsername('');
-    setDisplayName('');
-  } else {
+  if (!result.success) {
     Alert.alert('Registration Failed', result.error || 'Something went wrong.');
   }
+  // No need to alert success or clear fields as the UI will change to authenticated view
 };
 
 return (
@@ -62,7 +59,16 @@ return (
       value={displayName}
       onChangeText={setDisplayName}
     />
-    <Button title="Register" onPress={handleSubmit} />
+    <TouchableOpacity 
+      style={styles.registerButton} 
+      onPress={handleSubmit}
+    >
+      <Text style={styles.registerButtonText}>Register</Text>
+    </TouchableOpacity>
+    <View style={styles.switchContainer}>
+      <Text style={styles.switchText}>Already have an account? </Text>
+      <Text style={styles.switchLink} onPress={onSwitchToLogin}>Login</Text>
+    </View>
   </View>
 );
 }
@@ -70,24 +76,62 @@ return (
 const styles = StyleSheet.create({
 container: {
   width: '80%',
-  padding: 20,
-  backgroundColor: '#f0f0f0',
+  padding: 24,
+  backgroundColor: colors.surface,
   borderRadius: 10,
   marginBottom: 20,
   alignItems: 'center',
   alignSelf: 'center',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,
+  borderWidth: 1,
+  borderColor: colors.border,
 },
 title: {
-  fontSize: 24,
-  marginBottom: 20,
+  fontSize: 28,
+  marginBottom: 24,
   fontWeight: 'bold',
+  color: colors.secondary,
 },
 input: {
   width: '100%',
-  padding: 10,
-  marginBottom: 10,
+  padding: 12,
+  marginBottom: 16,
   borderWidth: 1,
-  borderColor: '#ccc',
-  borderRadius: 5,
+  borderColor: colors.border,
+  borderRadius: 8,
+  backgroundColor: colors.background,
+  fontSize: 16,
+},
+registerButton: {
+  backgroundColor: colors.secondary,
+  paddingVertical: 12,
+  paddingHorizontal: 24,
+  borderRadius: 8,
+  width: '100%',
+  alignItems: 'center',
+  marginTop: 10,
+},
+registerButtonText: {
+  color: colors.text.inverse,
+  fontSize: 18,
+  fontWeight: 'bold',
+},
+switchContainer: {
+  flexDirection: 'row',
+  marginTop: 20,
+  alignItems: 'center',
+},
+switchText: {
+  fontSize: 16,
+  color: colors.text.secondary,
+},
+switchLink: {
+  fontSize: 16,
+  color: colors.accent,
+  fontWeight: 'bold',
 },
 });

@@ -1,8 +1,16 @@
 // frontend/src/screens/AddProductsScreen.tsx (formerly OnboardingWatchlistScreen.tsx)
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { colors } from '../styles/colors';
 import { User } from 'firebase/auth';
 import { onboardingProductCategories, ProductCategory, ProductVariant } from '../data/onboardingProducts';
+
+interface WatchlistItem {
+  id?: string;
+  productName: string;
+  productCategory: string;
+  displayImageUrl: string | null;
+}
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -12,10 +20,9 @@ UIManager.setLayoutAnimationEnabledExperimental(true);
 interface AddProductsScreenProps { // Renamed interface
 firebaseUser: User;
 API_BASE_URL: string;
-// Removed onWatchlistPopulated prop
 }
 
-const AddProductsScreen: React.FC<AddProductsScreenProps> = ({ // Renamed component
+const AddProductsScreen: React.FC<AddProductsScreenProps> = ({ 
 firebaseUser,
 API_BASE_URL,
 }) => {
@@ -109,7 +116,7 @@ const handleAddSelectedToWatchlist = async () => {
     const failedAdds = results.filter(r => !r.success);
 
     if (successfulAdds > 0) {
-      Alert.alert('Success', `${successfulAdds} product(s) added to your watchlist!`);
+      // Alert.alert('Success', `${successfulAdds} product(s) added to your watchlist!`);
       setSelectedVariants({}); // Clear selections after successful add
       setExpandedCategory(null); // Collapse categories
     }
@@ -135,8 +142,8 @@ const isVariantInWatchlist = (variantName: string, category: ProductCategory) =>
 
 return (
   <ScrollView style={styles.container}>
-    <Text style={styles.header}>Add Products to Watchlist</Text> {/* Updated header */}
-    <Text style={styles.subheader}>Select products from categories below:</Text> {/* Updated subheader */}
+    <Text style={styles.header}>Add Products to your Watchlist</Text> 
+    <Text style={styles.subheader}>Select products from categories below:</Text>
 
     {onboardingProductCategories.map((category) => (
       <View key={category.name} style={styles.categoryContainer}>
@@ -167,10 +174,10 @@ return (
                 >
                   <Text style={[
                     styles.variantButtonText,
-                    disabled && { color: '#aaa' }
+                    selectedVariants[variant.name] ? { color: colors.text.inverse } : null,
+                    disabled ? { color: colors.text.muted } : null
                   ]}>
-                    {variant.name}
-                    {disabled && ' (Already added)'}
+                    {variant.name}{disabled ? ' (Already added)' : ''}
                   </Text>
                 </TouchableOpacity>
               );
@@ -180,11 +187,19 @@ return (
       </View>
     ))}
 
-    <Button
-      title={loading ? 'Adding to Watchlist...' : 'Add Selected Products'}
+    <TouchableOpacity
+      style={[
+        styles.addButton,
+        (loading || Object.keys(selectedVariants).filter(name => selectedVariants[name]).length === 0) ? 
+        styles.disabledButton : null
+      ]}
       onPress={handleAddSelectedToWatchlist}
       disabled={loading || Object.keys(selectedVariants).filter(name => selectedVariants[name]).length === 0}
-    />
+    >
+      <Text style={styles.addButtonText}>
+        {loading ? 'Adding to Watchlist...' : 'Add Selected Products'}
+      </Text>
+    </TouchableOpacity>
   </ScrollView>
 );
 };
@@ -193,27 +208,28 @@ const styles = StyleSheet.create({
 container: {
   flex: 1,
   padding: 20,
-  backgroundColor: '#f8f8f8',
+  backgroundColor: colors.background,
 },
 header: {
   fontSize: 22,
   fontWeight: 'bold',
   marginBottom: 10,
   textAlign: 'center',
+  color: colors.text.primary,
 },
 subheader: {
   fontSize: 16,
   marginBottom: 20,
   textAlign: 'center',
-  color: '#666',
+  color: colors.text.secondary,
 },
 categoryContainer: {
   marginBottom: 10,
-  backgroundColor: '#fff',
+  backgroundColor: colors.surface,
   borderRadius: 8,
   overflow: 'hidden',
   borderWidth: 1,
-  borderColor: '#ddd',
+  borderColor: colors.border,
 },
 categoryHeader: {
   flexDirection: 'row',
@@ -221,45 +237,63 @@ categoryHeader: {
   alignItems: 'center',
   paddingVertical: 12,
   paddingHorizontal: 15,
-  backgroundColor: '#e9e9e9',
+  backgroundColor: colors.background,
 },
 categoryHeaderText: {
   fontSize: 18,
   fontWeight: 'bold',
-  color: '#333',
+  color: colors.text.primary,
 },
 categoryExpandIcon: {
   fontSize: 18,
-  color: '#666',
+  color: colors.text.secondary,
 },
 variantsGrid: {
   flexDirection: 'row',
   flexWrap: 'wrap',
   padding: 10,
   borderTopWidth: 1,
-  borderTopColor: '#eee',
+  borderTopColor: colors.border,
 },
 variantButton: {
-  backgroundColor: '#f0f0f0',
+  backgroundColor: colors.background,
   paddingVertical: 8,
   paddingHorizontal: 12,
   borderRadius: 15,
   margin: 5,
   borderWidth: 1,
-  borderColor: '#ccc',
+  borderColor: colors.border,
 },
 variantButtonSelected: {
-  backgroundColor: '#007bff',
-  borderColor: '#007bff',
+  backgroundColor: colors.primary,
+  borderColor: colors.primaryDark,
 },
 variantButtonDisabled: {
   opacity: 0.5,
-  backgroundColor: '#eee',
-  borderColor: '#ddd',
+  backgroundColor: colors.border,
+  borderColor: colors.border,
 },
 variantButtonText: {
   fontSize: 14,
-  color: '#333',
+  color: colors.text.primary,
+},
+addButton: {
+  backgroundColor: colors.primary,
+  paddingVertical: 14,
+  paddingHorizontal: 20,
+  borderRadius: 10,
+  marginTop: 20,
+  marginBottom: 30,
+  alignItems: 'center',
+},
+disabledButton: {
+  opacity: 0.5,
+  backgroundColor: colors.border,
+},
+addButtonText: {
+  color: colors.text.inverse,
+  fontSize: 16,
+  fontWeight: 'bold',
 },
 });
 

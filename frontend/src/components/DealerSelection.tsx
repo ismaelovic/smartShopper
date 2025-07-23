@@ -1,6 +1,7 @@
 // frontend/src/components/DealerSelection.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors } from '../styles/colors';
 
 interface Dealer {
 id: string;
@@ -53,22 +54,22 @@ dealerButton: {
   margin: 5,
 },
 selectedButton: {
-  backgroundColor: '#007bff',
-  borderColor: '#007bff',
+  backgroundColor: colors.secondary, // Use orange for dealers (stores)
+  borderColor: colors.secondaryDark,
 },
 unselectedButton: {
-  backgroundColor: '#fff',
-  borderColor: '#ccc',
+  backgroundColor: colors.surface,
+  borderColor: colors.border,
 },
 buttonText: {
   fontSize: 14,
 },
 selectedText: {
-  color: '#fff',
+  color: colors.text.inverse,
   fontWeight: 'bold',
 },
 unselectedText: {
-  color: '#555',
+  color: colors.text.primary,
 },
 });
 

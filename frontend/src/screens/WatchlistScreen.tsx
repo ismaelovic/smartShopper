@@ -1,6 +1,7 @@
 // frontend/src/screens/WatchlistScreen.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, TouchableOpacity, RefreshControl } from 'react-native';
+import { colors } from '../styles/colors';
 import { User } from 'firebase/auth';
 
 interface WatchlistScreenProps {
@@ -74,26 +75,26 @@ const handleRemoveItem = async (itemId: string, productName: string) => {
       {
         text: 'Remove',
         onPress: async () => {
-          try {
-            const idToken = await firebaseUser.getIdToken();
-            const response = await fetch(`${API_BASE_URL}/watchlist/${firebaseUser.uid}/product/${itemId}`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${idToken}`,
-              },
-            });
+  try {
+    const idToken = await firebaseUser.getIdToken();
+    const response = await fetch(`${API_BASE_URL}/watchlist/${firebaseUser.uid}/product/${itemId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${idToken}`,
+      },
+    });
 
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.message || 'Failed to remove item');
-            }
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to remove item');
+    }
 
             Alert.alert('Success', 'Item removed from watchlist.');
-            fetchWatchlist(); // Refresh the list
-          } catch (error: any) {
-            console.error('Error removing item:', error);
+    fetchWatchlist(); // Refresh the list
+  } catch (error: any) {
+    console.error('Error removing item:', error);
             Alert.alert('Error', `Failed to remove item: ${error.message}`);
-          }
+  }
         },
         style: 'destructive',
       },
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
 container: {
   flex: 1,
   padding: 20,
-  backgroundColor: '#f8f8f8',
+  backgroundColor: colors.background,
 },
 centered: {
   flex: 1,
@@ -179,7 +180,7 @@ header: {
   fontWeight: 'bold',
   marginBottom: 20,
   textAlign: 'center',
-  color: '#333',
+  color: colors.text.primary,
 },
 emptyWatchlist: {
   alignItems: 'center',
@@ -187,16 +188,16 @@ emptyWatchlist: {
 },
 emptyWatchlistText: {
   fontSize: 18,
-  color: '#666',
+  color: colors.text.secondary,
   marginBottom: 10,
 },
 emptyWatchlistSubText: {
   fontSize: 14,
-  color: '#888',
+  color: colors.text.muted,
   textAlign: 'center',
 },
 watchlistItem: {
-  backgroundColor: '#fff',
+  backgroundColor: colors.surface,
   borderRadius: 10,
   padding: 15,
   marginBottom: 15,
@@ -224,11 +225,11 @@ itemHeaderTextContainer: {
 itemProductName: {
   fontSize: 18,
   fontWeight: 'bold',
-  color: '#333',
+  color: colors.text.primary,
 },
 itemProductCategory: {
   fontSize: 14,
-  color: '#666',
+  color: colors.text.secondary,
 },
 itemDetails: {
   marginBottom: 10,
@@ -236,27 +237,27 @@ itemDetails: {
 itemPrice: {
   fontSize: 16,
   fontWeight: '600',
-  color: '#28a745',
+  color: colors.primary,
 },
 itemOriginalPrice: {
   fontSize: 14,
-  color: '#dc3545',
+  color: colors.error,
   textDecorationLine: 'line-through',
 },
 itemAddedAt: {
   fontSize: 12,
-  color: '#999',
+  color: colors.text.muted,
   marginTop: 5,
 },
 removeButton: {
-  backgroundColor: '#dc3545',
+  backgroundColor: colors.secondary,
   paddingVertical: 8,
   paddingHorizontal: 12,
   borderRadius: 5,
   alignSelf: 'flex-end', // Align to the right
 },
 removeButtonText: {
-  color: '#fff',
+  color: colors.text.inverse,
   fontSize: 14,
   fontWeight: 'bold',
 },

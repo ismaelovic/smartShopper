@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors } from '../styles/colors';
 
 interface ProductSelectionProps {
 products: string[];
@@ -47,22 +48,22 @@ productButton: {
   margin: 5,
 },
 selectedButton: {
-  backgroundColor: '#007bff',
-  borderColor: '#007bff',
+  backgroundColor: colors.primary, // Green for products (fresh products)
+  borderColor: colors.primaryDark,
 },
 unselectedButton: {
-  backgroundColor: '#fff',
-  borderColor: '#ccc',
+  backgroundColor: colors.surface,
+  borderColor: colors.border,
 },
 buttonText: {
   fontSize: 14,
 },
 selectedText: {
-  color: '#fff',
+  color: colors.text.inverse,
   fontWeight: 'bold',
 },
 unselectedText: {
-  color: '#555',
+  color: colors.text.primary,
 },
 });
 

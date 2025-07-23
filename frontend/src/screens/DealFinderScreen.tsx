@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Button, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { colors } from '../styles/colors';
 import DealerSelection from '../components/DealerSelection';
 import { fetchDeals } from '../services/apiService';
 import { User } from 'firebase/auth';
@@ -140,7 +141,7 @@ const handleFindDeals = async () => {
   }
 
   if (!firebaseUser) {
-    Alert.alert('Authentication Required', 'Please log in to find deals.');
+    // Alert.alert('Authentication Required', 'Please log in to find deals.');
     return;
   }
 
@@ -153,7 +154,7 @@ const handleFindDeals = async () => {
     console.log('Fetched deals:', fetchedDeals);
   } catch (error: any) {
     console.error('Error fetching deals:', error);
-    Alert.alert('Error', error.message || 'Failed to fetch deals. Please try again.');
+    // Alert.alert('Error', error.message || 'Failed to fetch deals. Please try again.');
   } finally {
     setLoadingDeals(false);
   }
@@ -161,7 +162,7 @@ const handleFindDeals = async () => {
 
 const handleAddDealToWatchlist = async (deal: DealInfo) => {
   if (!firebaseUser) {
-    Alert.alert('Authentication Required', 'Please log in to add items to your watchlist.');
+    // Alert.alert('Authentication Required', 'Please log in to add items to your watchlist.');
     return;
   }
 
@@ -182,7 +183,7 @@ const handleAddDealToWatchlist = async (deal: DealInfo) => {
     }
 
     const result = await response.json();
-    Alert.alert('Success', result.message || 'Deal added to watchlist!');
+    // Alert.alert('Success', result.message || 'Deal added to watchlist!');
     fetchUserWatchlist(); // Re-fetch to update the watchlist display
   } catch (error: any) {
     console.error('Error adding deal to watchlist:', error);
@@ -316,11 +317,18 @@ return (
       <Text style={styles.selectedCountText}>
         {selectedProductNames.length} selected
       </Text>
-      <Button
-        title={loadingDeals ? "Finding Deals..." : "Find Best Deals"}
+      <TouchableOpacity
+        style={[
+          styles.findDealsButton,
+          (loadingDeals || selectedProductNames.length === 0) && styles.disabledButton
+        ]}
         onPress={handleFindDeals}
         disabled={loadingDeals || selectedProductNames.length === 0}
-      />
+      >
+        <Text style={styles.findDealsButtonText}>
+          {loadingDeals ? "Finding Deals..." : "Find Best Deals"}
+        </Text>
+      </TouchableOpacity>
     </View>
   </View>
 );
@@ -329,7 +337,7 @@ return (
 const styles = StyleSheet.create({
 fullScreenContainer: {
   flex: 1,
-  backgroundColor: '#f8f8f8',
+  backgroundColor: colors.background,
 },
 scrollViewContent: {
   flex: 1,
@@ -340,12 +348,28 @@ centered: {
   justifyContent: 'center',
   alignItems: 'center',
 },
+findDealsButton: {
+  backgroundColor: colors.secondary,
+  paddingVertical: 10,
+  paddingHorizontal: 16,
+  borderRadius: 8,
+  alignItems: 'center',
+},
+disabledButton: {
+  opacity: 0.5,
+  backgroundColor: colors.border,
+},
+findDealsButtonText: {
+  color: colors.text.inverse,
+  fontSize: 16,
+  fontWeight: 'bold',
+},
 header: {
   fontSize: 24,
   fontWeight: 'bold',
   marginBottom: 20,
   textAlign: 'center',
-  color: '#333',
+  color: colors.text.primary,
 },
 section: {
   marginBottom: 20,
@@ -514,7 +538,7 @@ noDeals: {
   paddingVertical: 20,
 },
 addToWatchlistButton: {
-  backgroundColor: '#28a745',
+  backgroundColor: colors.primary,
   paddingVertical: 8,
   paddingHorizontal: 12,
   borderRadius: 5,
@@ -522,7 +546,7 @@ addToWatchlistButton: {
   alignSelf: 'flex-start',
 },
 addToWatchlistButtonText: {
-  color: '#fff',
+  color: colors.text.inverse,
   fontSize: 14,
   fontWeight: 'bold',
 },
@@ -530,11 +554,11 @@ bottomActionBar: {
   flexDirection: 'row',
   justifyContent: 'space-between',
   alignItems: 'center',
-  paddingVertical: 10,
+  paddingVertical: 12,
   paddingHorizontal: 20,
-  backgroundColor: '#fff',
+  backgroundColor: colors.surface,
   borderTopWidth: 1,
-  borderTopColor: '#eee',
+  borderTopColor: colors.border,
   position: 'absolute',
   bottom: 0,
   left: 0,
@@ -542,13 +566,13 @@ bottomActionBar: {
   shadowColor: '#000',
   shadowOffset: { width: 0, height: -2 },
   shadowOpacity: 0.1,
-  shadowRadius: 2,
+  shadowRadius: 4,
   elevation: 5,
 },
 selectedCountText: {
   fontSize: 16,
   fontWeight: 'bold',
-  color: '#555',
+  color: colors.text.secondary,
 },
 });
 

@@ -1,6 +1,7 @@
 // frontend/src/screens/ProfileScreen.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ActivityIndicator, Alert, ScrollView, TouchableOpacity } from 'react-native';
+import { colors } from '../styles/colors';
 import { User } from 'firebase/auth'; // Import User type
 
 interface ProfileScreenProps {
@@ -85,7 +86,7 @@ const handleSaveProfile = async () => {
     setProfile(updatedData);
     setEditedProfile(updatedData); // Update editedProfile with the latest data
     setIsEditing(false);
-    Alert.alert('Success', 'Profile updated successfully!');
+    // Alert.alert('Success', 'Profile updated successfully!');
   } catch (error: any) {
     console.error('Error saving profile:', error);
     Alert.alert('Error', `Failed to save profile: ${error.message}`);
@@ -97,7 +98,7 @@ const handleSaveProfile = async () => {
 if (loading) {
   return (
     <View style={styles.centered}>
-      <ActivityIndicator size="large" color="#0000ff" />
+      <ActivityIndicator size="large" color={colors.primary} />
       <Text>Loading profile...</Text>
     </View>
   );
@@ -107,7 +108,9 @@ if (!profile) {
   return (
     <View style={styles.centered}>
       <Text>Could not load user profile.</Text>
-      <Button title="Retry" onPress={fetchProfile} />
+      <TouchableOpacity style={styles.editButton} onPress={fetchProfile}>
+        <Text style={styles.editButtonText}>Retry</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -149,7 +152,7 @@ return (
       <Text style={styles.label}>Bio:</Text>
       <TextInput
         style={[styles.input, styles.multilineInput]}
-        value={isEditing ? editedProfile.bio : profile.bio}
+        value={isEditing ? editedProfile.bio || '' : profile.bio || ''}
         onChangeText={(text) => setEditedProfile({ ...editedProfile, bio: text })}
         editable={isEditing}
         multiline
@@ -161,7 +164,7 @@ return (
       <Text style={styles.label}>Location:</Text>
       <TextInput
         style={styles.input}
-        value={isEditing ? editedProfile.location : profile.location}
+        value={isEditing ? editedProfile.location || '' : profile.location || ''}
         onChangeText={(text) => setEditedProfile({ ...editedProfile, location: text })}
         editable={isEditing}
       />
@@ -169,11 +172,27 @@ return (
 
     {isEditing ? (
       <View style={styles.buttonContainer}>
-        <Button title={saving ? "Saving..." : "Save Changes"} onPress={handleSaveProfile} disabled={saving} />
-        <Button title="Cancel" onPress={() => { setIsEditing(false); setEditedProfile(profile); }} color="red" />
+        <TouchableOpacity 
+          style={[styles.saveButton, saving && styles.disabledButton]} 
+          onPress={handleSaveProfile} 
+          disabled={saving}
+        >
+          <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save Changes"}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.cancelButton} 
+          onPress={() => { setIsEditing(false); setEditedProfile(profile); }}
+        >
+          <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
       </View>
     ) : (
-      <Button title="Edit Profile" onPress={() => setIsEditing(true)} />
+      <TouchableOpacity 
+        style={styles.editButton} 
+        onPress={() => setIsEditing(true)}
+      >
+        <Text style={styles.editButtonText}>Edit Profile</Text>
+      </TouchableOpacity>
     )}
   </ScrollView>
 );
@@ -183,7 +202,7 @@ const styles = StyleSheet.create({
 container: {
   flex: 1,
   padding: 20,
-  backgroundColor: '#f8f8f8',
+  backgroundColor: colors.background,
 },
 centered: {
   flex: 1,
@@ -195,7 +214,7 @@ header: {
   fontWeight: 'bold',
   marginBottom: 20,
   textAlign: 'center',
-  color: '#333',
+  color: colors.text.primary,
 },
 profileSection: {
   marginBottom: 15,
@@ -204,12 +223,12 @@ label: {
   fontSize: 16,
   fontWeight: '600',
   marginBottom: 5,
-  color: '#555',
+  color: colors.text.secondary,
 },
 input: {
-  backgroundColor: '#fff',
+  backgroundColor: colors.surface,
   borderWidth: 1,
-  borderColor: '#ddd',
+  borderColor: colors.border,
   borderRadius: 8,
   padding: 10,
   fontSize: 16,
@@ -222,6 +241,53 @@ buttonContainer: {
   flexDirection: 'row',
   justifyContent: 'space-around',
   marginTop: 20,
+},
+saveButton: {
+  backgroundColor: colors.primary,
+  paddingVertical: 12,
+  paddingHorizontal: 20,
+  borderRadius: 8,
+  flex: 1,
+  marginRight: 10,
+  alignItems: 'center',
+},
+disabledButton: {
+  backgroundColor: colors.text.muted,
+  opacity: 0.7,
+},
+saveButtonText: {
+  color: colors.text.inverse,
+  fontSize: 16,
+  fontWeight: '600',
+},
+cancelButton: {
+  backgroundColor: colors.surface,
+  paddingVertical: 12,
+  paddingHorizontal: 20,
+  borderRadius: 8,
+  borderWidth: 1,
+  borderColor: colors.border,
+  flex: 1,
+  marginLeft: 10,
+  alignItems: 'center',
+},
+cancelButtonText: {
+  color: colors.text.primary,
+  fontSize: 16,
+  fontWeight: '600',
+},
+editButton: {
+  backgroundColor: colors.accent,
+  paddingVertical: 12,
+  paddingHorizontal: 20,
+  borderRadius: 8,
+  marginTop: 20,
+  alignItems: 'center',
+},
+editButtonText: {
+  color: colors.text.inverse,
+  fontSize: 16,
+  fontWeight: '600',
 },
 });
 

@@ -1,12 +1,13 @@
 // App.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, Button, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, SafeAreaView, Button, ActivityIndicator, TouchableOpacity } from 'react-native';
 import DealFinderScreen from './screens/DealFinderScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AddProductsScreen from './screens/AddProductsScreen';
 import WatchlistScreen from './screens/WatchlistScreen';
 import RegistrationForm from './components/RegistrationForm';
 import LoginForm from './components/LoginForm';
+import { colors } from './styles/colors';
 
 import { auth } from './config/firebaseConfig';
 import {
@@ -20,9 +21,10 @@ const API_BASE_URL = 'http://localhost:3000';
 
 export default function App() {
 const [isAuthenticated, setIsAuthenticated] = useState(false);
-const [firebaseUser, setFirebaseUser] = useState(null);
+const [firebaseUser, setFirebaseUser] = useState<any>(null);
 const [loading, setLoading] = useState(true);
 const [currentScreen, setCurrentScreen] = useState('dealFinder');
+const [authScreen, setAuthScreen] = useState('login'); // 'login' or 'register'
 
 type RegisterParams = {
   email: string;
@@ -31,7 +33,7 @@ type RegisterParams = {
   displayName?: string;
 };
 
-useEffect(() => {
+  useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (user) => {
     if (user) {
       setFirebaseUser(user);
@@ -40,14 +42,13 @@ useEffect(() => {
     } else {
       setFirebaseUser(null);
       setIsAuthenticated(false);
-      setCurrentScreen('login');
+      // Default to login screen when logged out
+      setAuthScreen('login');
     }
     setLoading(false);
   });
   return () => unsubscribe();
-}, []);
-
-const handleRegister = async ({ email, password, username, displayName }: RegisterParams) => {
+}, []);const handleRegister = async ({ email, password, username, displayName }: RegisterParams) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
@@ -114,11 +115,40 @@ return (
       // Explicitly wrap the authenticated content in a View or Fragment
       <React.Fragment>
         <View style={styles.navBar}>
-          <Button title="Deals" onPress={() => setCurrentScreen('dealFinder')} />
-          <Button title="Watchlist" onPress={() => setCurrentScreen('watchlist')} />
-          <Button title="Add Products" onPress={() => setCurrentScreen('addProducts')} />
-          <Button title="My Profile" onPress={() => setCurrentScreen('profile')} />
-          <Button title="Logout" onPress={handleLogout} />
+          <TouchableOpacity
+            style={[styles.navButton, currentScreen === 'dealFinder' ? styles.activeNavButton : {}]}
+            onPress={() => setCurrentScreen('dealFinder')}
+          >
+            <Text style={[styles.navButtonText, currentScreen === 'dealFinder' ? styles.activeNavText : {}]}>Deals</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.navButton, currentScreen === 'watchlist' ? styles.activeNavButton : {}]}
+            onPress={() => setCurrentScreen('watchlist')}
+          >
+            <Text style={[styles.navButtonText, currentScreen === 'watchlist' ? styles.activeNavText : {}]}>Watchlist</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.navButton, currentScreen === 'addProducts' ? styles.activeNavButton : {}]}
+            onPress={() => setCurrentScreen('addProducts')}
+          >
+            <Text style={[styles.navButtonText, currentScreen === 'addProducts' ? styles.activeNavText : {}]}>Add Products</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.navButton, currentScreen === 'profile' ? styles.activeNavButton : {}]}
+            onPress={() => setCurrentScreen('profile')}
+          >
+            <Text style={[styles.navButtonText, currentScreen === 'profile' ? styles.activeNavText : {}]}>Profile</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
         </View>
 
         {currentScreen === 'dealFinder' && (
@@ -135,10 +165,19 @@ return (
         )}
       </React.Fragment>
     ) : (
-      // This part was already correctly wrapped in a fragment
+      // Authentication screens
       <React.Fragment>
-        <RegistrationForm onRegister={handleRegister} />
-        <LoginForm onLogin={handleLogin} />
+        {authScreen === 'login' ? (
+          <LoginForm 
+            onLogin={handleLogin} 
+            onSwitchToRegister={() => setAuthScreen('register')} 
+          />
+        ) : (
+          <RegistrationForm 
+            onRegister={handleRegister} 
+            onSwitchToLogin={() => setAuthScreen('login')} 
+          />
+        )}
       </React.Fragment>
     )}
   </SafeAreaView>
@@ -148,25 +187,56 @@ return (
 const styles = StyleSheet.create({
 container: {
   flex: 1,
-  backgroundColor: '#fff',
+  backgroundColor: colors.background,
   paddingTop: 25,
 },
 loadingContainer: {
   flex: 1,
   justifyContent: 'center',
   alignItems: 'center',
+  backgroundColor: colors.background,
 },
 welcomeText: {
   fontSize: 20,
   fontWeight: 'bold',
   marginBottom: 20,
+  color: colors.text.primary,
 },
 navBar: {
   flexDirection: 'row',
   justifyContent: 'space-around',
-  paddingVertical: 10,
+  paddingVertical: 12,
   borderBottomWidth: 1,
-  borderBottomColor: '#eee',
+  borderBottomColor: colors.border,
   width: '100%',
+  backgroundColor: colors.surface,
+},
+navButton: {
+  paddingVertical: 8,
+  paddingHorizontal: 12,
+  borderRadius: 6,
+},
+activeNavButton: {
+  backgroundColor: colors.primary,
+},
+navButtonText: {
+  fontSize: 14,
+  color: colors.text.primary,
+  fontWeight: '500',
+},
+activeNavText: {
+  color: colors.text.inverse,
+  fontWeight: 'bold',
+},
+logoutButton: {
+  paddingVertical: 8,
+  paddingHorizontal: 12,
+  borderRadius: 6,
+  backgroundColor: colors.secondary,
+},
+logoutButtonText: {
+  color: colors.text.inverse,
+  fontWeight: 'bold',
+  fontSize: 14,
 }
 });
