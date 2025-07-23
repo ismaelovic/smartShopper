@@ -1,6 +1,5 @@
 // backend/src/controllers/watchlistController.js
 const { db, admin } = require('../components/firebase-admin');
-// const { getLlmProductInfo } = require('../services/llmService'); // Your LLM integration
 
 const addItemToWatchlist = async (req, res) => {
 const userId = req.params.id;
@@ -17,15 +16,16 @@ try {
 
   const newItem = {
     productName: dealData.productName, // The original heading is the product name
-    productCategory: dealData.productCategory, // The LLM-derived category
-    displayImageUrl: dealData.displayImageUrl || null, // The thumbnail image
+    fullProductName: dealData.fullProductName || null, // Redundant, but kept for clarity if needed elsewhere
+    productCategory: dealData.product || null, // The LLM-derived category
+    displayImageUrl: dealData.imageUrl || null, // The thumbnail image
 
     // Original deal details (for context/re-fetching)
-    originalHeading: dealData.heading || null, // Redundant, but kept for clarity if needed elsewhere
-    originalDescription: dealData.description || null,
-    originalDealerId: dealData.dealer_id || null,
-    originalDealerName: dealData.dealer?.name || null,
-    originalPrice: dealData.pricing?.price || null,
+    originalDealerId: dealData.dealerId || null,
+    originalDealerName: dealData.dealerName || null,
+    currentPrice: dealData.currentPrice || null,
+    originalPrice: dealData.originalPrice || null,
+    discountAmount: dealData.discountAmount || null,
     addedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 

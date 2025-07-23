@@ -67,7 +67,7 @@ try {
         'Authorization': `Bearer ${idToken}`,
       },
       body: JSON.stringify({
-        productName, // This is now "Letmælk"
+        productName, 
         productCategory,
         displayImageUrl: null, // No image for generic onboarding items
       }),

@@ -87,7 +87,6 @@ const fetchUserWatchlist = useCallback(async () => {
     const data: WatchlistItem[] = await response.json();
     console.log('Fetched user watchlist:', data);
     setUserWatchlist(data);
-    // Initialize selectedLlmProductNames with all llmProductNames from the fetched watchlist
     setSelectedProductNames(data.map(item => item.productName));
   } catch (error: any) {
     console.error('Error fetching user watchlist:', error);
@@ -124,10 +123,10 @@ const handleFindDeals = async () => {
   setLoadingDeals(true);
   setDeals(null);
   try {
-    console.log('Fetching deals for LLM products:', selectedProductNames, 'and dealers:', selectedDealerIds);
+    // console.log('Fetching deals for LLM products:', selectedProductNames, 'and dealers:', selectedDealerIds);
     const fetchedDeals = await fetchDeals(selectedProductNames, selectedDealerIds, firebaseUser, API_BASE_URL);
-    setDeals(fetchedDeals);
     console.log('Fetched deals:', fetchedDeals);
+    setDeals(fetchedDeals);
   } catch (error: any) {
     console.error('Error fetching deals:', error);
     Alert.alert('Error', error.message || 'Failed to fetch deals. Please try again.');
@@ -142,8 +141,6 @@ const handleAddDealToWatchlist = async (deal: DealInfo) => {
     Alert.alert('Authentication Required', 'Please log in to add items to your watchlist.');
     return;
   }
-
-
 
   try {
     const idToken = await firebaseUser.getIdToken();
@@ -245,17 +242,17 @@ return (
         {Object.keys(deals).length > 0 ? (
           Object.entries(deals).map(([requestedProductName, dealInfo]: [string, any]) => (
             <View key={requestedProductName} style={styles.dealItem}>
-              <Text style={styles.dealProduct}>{dealInfo.productDescription || requestedProductName}:</Text>
+              <Text style={styles.dealProduct}>{dealInfo.productName || dealInfo.productDescription || requestedProductName}:</Text>
               {dealInfo.status === 'not_found' ? (
                 <Text style={styles.notFound}>{dealInfo.message}</Text>
               ) : (
-                <View> {/* Wrap content in a View to allow for the button */}
+                <View>
                   <View style={styles.dealContentRow}>
                     <View style={styles.dealInfoColumn}>
-                      <Text style={styles.dealPrice}>Price: DKK {dealInfo.price.toFixed(2)}</Text>
-                      <Text style={styles.dealStore}>Store: {dealInfo.store} ({dealInfo.storeAddress})</Text>
+                      <Text style={styles.dealPrice}>Price: DKK {dealInfo.currentPrice.toFixed(2)}</Text>
+                      <Text style={styles.dealStore}>Dealer: {dealInfo.dealerName}</Text>
                       {dealInfo.originalPrice && <Text style={styles.dealDiscount}>Original: DKK {dealInfo.originalPrice.toFixed(2)}</Text>}
-                      {dealInfo.validUntil && <Text style={styles.dealExpiry}>Expires: {new Date(dealInfo.validUntil).toLocaleDateString()}</Text>}
+                      {dealInfo.offerExpires && <Text style={styles.dealExpiry}>Expires: {new Date(dealInfo.offerExpires).toLocaleDateString()}</Text>}
                     </View>
                     {dealInfo.imageUrl && (
                       <View style={styles.dealImageColumn}>
@@ -266,10 +263,9 @@ return (
                       </View>
                     )}
                   </View>
-                  {/* NEW: Add to Watchlist Button */}
                   <TouchableOpacity
                     style={styles.addToWatchlistButton}
-                    onPress={() => handleAddDealToWatchlist(dealInfo)} // Pass the entire dealInfo object
+                    onPress={() => handleAddDealToWatchlist(dealInfo)} 
                   >
                     <Text style={styles.addToWatchlistButtonText}>Add to Watchlist</Text>
                   </TouchableOpacity>

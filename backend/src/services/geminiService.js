@@ -42,7 +42,7 @@ Here is a JSON array of available grocery offers. Each object represents a singl
 ${JSON.stringify(offersForLLM, null, 2)}
 
 Please help me find the best deals for the products I am looking for.
-The best deal is defined as the lowest 'newPrice'. If multiple offers have the same lowest 'newPrice' for a product, prefer the one with the highest 'discount' percentage. If discount is not available, any of them is fine.
+The best deal is defined as the lowest 'pricing.price'. If multiple offers have the same lowest 'pricing.price' for a product, select the one where pre_price is not null.
 
 Your response MUST be a JSON object. Remove any json prefix, colons or other characters that might break a JSON format. The result is to be consumed by a Javascript app.
 The keys of the JSON object should be the exact product names from the user's 'selectedProducts' list.
@@ -51,32 +51,42 @@ The value for each key should be an object containing the best deal found, or a 
 Example of desired JSON output structure:
 {
 "milk": {
-  "product": "mælk", // The user's requested product name
+  "status": "found",
+  "requestedProductName": "mælk", 
+  "productCategory": "dairy",
   "source": "squid-api",
-  "currency": "DKK", // Add currency if available in the input data
-  "price": 8.5,
+  "currency": "DKK", 
+  "currentPrice": 8.5,
   "originalPrice": 12.95,
-  "discount": 34.5,
-  "store": "Netto",
-  "storeAddress": "Vesterbrogade 1, 8000 Aarhus C", // Or "Nationwide offer"
-  "storeId": "store_id_123",
-  "itemNameFound": "Økologisk Letmælk",
+  "discountAmount": 4.45,
+  "dealerName": "Netto",
+  "dealerId": "9ba51",
+  "fullProductName": "Lurpak smør, smørbar eller plantebaseret 200 g",
+  "productName": "Lurpak smør",
+  "size": "200",
+  "sizeUnit": "g",
   "imageUrl": "http://example.com/milk.jpg",
-  "expires": "2025-07-03T23:59:59Z"
+  "runFrom": "2025-06-28T00:00:00Z",
+  "runTill": "2025-07-03T23:59:59Z"
 },
-"eggs": {
-  "product": "eggs",
-  "source": "Tjek.com",
+"bread": {
+  "status": "found",
+  "productCategory": "bread",
+  "requestedProductName": "bread",
+  "source": "squid-api",
   "currency": "DKK",
-  "price": 15.0,
+  "currentPrice": 15.0,
   "originalPrice": 22.0,
-  "discount": 31.8,
-  "store": "REMA 1000",
-   "storeAddress": "Søndergade 2, 8000 Aarhus C",
-  "storeId": "rema1000_id",
-  "itemNameFound": "Skrabeæg Str. M/L 10 stk.",
-  "imageUrl": "http://example.com/eggs.jpg",
-  "expires": "2025-07-04T12:00:00Z"
+  "discountAmount": 7.0,
+  "dealerName": "REMA 1000",
+  "dealerId": "11deC",
+  "fullProductName": "Schulstad yoghurtboller, sødmælksbrød, Signatur Gilleleje eller Fanø, Kornkammeret økologisk solsikke rugbrød eller kernefryd 500-750 g",
+  "productName": "Schulstad yoghurtboller",
+  "size": "500",
+  "sizeUnit": "g",
+  "imageUrl": "http://example.com/bread.jpg",
+  "runFrom": "2025-06-28T00:00:00Z",
+  "runTill": "2025-07-03T23:59:59Z"
 },
 "bread": {
   "status": "not_found",
@@ -84,7 +94,7 @@ Example of desired JSON output structure:
 }
 }
 IMPORTANT: Do not convert product data to english. fx kaffe to coffe. Keep the product names in their native language as they are provided in the 'selectedProducts' list.
-Ensure the 'storeAddress' field is correctly formatted using the 'store.address' fields from the input.
+The payload does not provide any information about the product category, please generate a fitting category name, fx brød should be "Bread", Havarti Ost should be "Cheese" etc.
 `;
 
   // Save the full prompt for debugging

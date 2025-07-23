@@ -16,8 +16,6 @@ try {
   // Get the ID token from the authenticated Firebase user
   const idToken = await firebaseUser.getIdToken();
   console.log('Fetching deals with ID token:', idToken.substring(0, 20) + '...'); // Log first 20 chars
-  console.log('API Base URL:', apiBaseUrl);
-  console.log(JSON.stringify({ products, dealerIds }, null, 2)); // Log request payload
   const response = await fetch(`${apiBaseUrl}/api/find-deals`, {
     method: 'POST',
     headers: {
@@ -29,7 +27,6 @@ try {
       selectedDealerIds: dealerIds 
     })
   });
-  console.log('Response status:', response);
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || 'Failed to fetch deals');
