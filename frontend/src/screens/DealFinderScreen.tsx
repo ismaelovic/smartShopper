@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Button, StyleSheet, ScrollView, ActivityIndicator, Alert, Image, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { colors } from '../styles/colors';
 import DealerSelection from '../components/DealerSelection';
+import TrendingDealsCarousel from '../components/TrendingDealsCarousel';
 import { fetchDeals } from '../services/apiService';
 import { User } from 'firebase/auth';
 
@@ -25,7 +26,6 @@ displayImageUrl?: string | null; // Optional image for display
 
 interface DealInfo {
 productDescription: string; // The specific product description from the deal
-price: number;
 store: string; // Assuming this is the store brand name
 storeAddress: string; // Assuming this is the store address
 originalPrice?: number;
@@ -36,15 +36,18 @@ heading: string; // The original heading from the external API
 description: string; // The original description from the external API
 dealer_id: string; // The dealer ID from the external API
 dealer: { // The dealer object from the external API
+  id: number,
   name: string;
   // ... other dealer details
 };
-pricing: {
-  price: number;
+price: {
+  current: number;
+  original: number;
   // ...
 };
 images: {
   thumb: string;
+  view: string;
   // ...
 };
 // Add the LLM-generated fields that come with the dealInfo
@@ -72,6 +75,19 @@ const [deals, setDeals] = useState<Record<string, DealInfo> | null>(null);
 // New states for grouping and expansion
 const [groupedWatchlist, setGroupedWatchlist] = useState<Record<string, WatchlistItem[]>>({});
 const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+// Helper function to calculate days until expiry
+const calculateDaysUntilExpiry = (expiryDate: string): string => {
+  const today = new Date();
+  const expiry = new Date(expiryDate);
+  const diffTime = expiry.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 0) return "Expired";
+  if (diffDays === 0) return "Expires today";
+  if (diffDays === 1) return "Expires in 1 day";
+  return `Expires in ${diffDays} days`;
+};
 
 // Helper to group watchlist items by category
 useEffect(() => {
@@ -204,6 +220,24 @@ return (
   <View style={styles.fullScreenContainer}>
     <ScrollView style={styles.scrollViewContent}>
       <Text style={styles.header}>Find Your Best Grocery Deals</Text>
+      
+      {/* Trending Deals Carousel */}
+      <TrendingDealsCarousel 
+        API_BASE_URL={API_BASE_URL}
+        firebaseUser={firebaseUser}
+        onSelectDeal={(deal) => {
+          // You can implement deal selection logic here if needed
+          // For example, show a modal with deal details or navigate to a detail screen
+          Alert.alert(
+            'Deal Details',
+            `${deal.productName}\nPrice: ${deal.price.current} kr\nStore: ${deal.dealer?.name || deal.dealer?.id}`,
+            [
+              { text: 'Add to Watchlist', onPress: () => handleAddDealToWatchlist(deal) },
+              { text: 'Cancel', style: 'cancel' }
+            ]
+          );
+        }}
+      />
 
       <View style={styles.section}>
         <Text style={styles.label}>Select Products to Find Deals For:</Text>
@@ -274,17 +308,23 @@ return (
           {Object.keys(deals).length > 0 ? (
             Object.entries(deals).map(([requestedProductName, dealInfo]: [string, any]) => (
               <View key={requestedProductName} style={styles.dealItem}>
-                <Text style={styles.dealProduct}>{dealInfo.productDescription || requestedProductName}:</Text>
+                <Text style={styles.dealProduct}>{dealInfo.productName || requestedProductName}:</Text>
                 {dealInfo.status === 'not_found' ? (
                   <Text style={styles.notFound}>{dealInfo.message}</Text>
                 ) : (
                   <View>
                     <View style={styles.dealContentRow}>
                       <View style={styles.dealInfoColumn}>
-                        <Text style={styles.dealPrice}>Price: DKK {dealInfo.currentPrice.toFixed(2)}</Text>
-                        <Text style={styles.dealStore}>Store: {dealInfo.dealerName}</Text>
-                        {dealInfo.originalPrice && <Text style={styles.dealDiscount}>Original: DKK {dealInfo.originalPrice.toFixed(2)}</Text>}
-                        {dealInfo.runTill && <Text style={styles.dealExpiry}>Expires: {new Date(dealInfo.runTill).toLocaleDateString()}</Text>}
+                        <Text style={styles.dealPrice}>Price: DKK {dealInfo.price?.current.toFixed(2)}</Text>
+                        <Text style={styles.dealStore}>Dealer: {dealInfo.dealer?.name}</Text>
+                        {dealInfo.originalPrice && <Text style={styles.dealDiscount}>Original: DKK {dealInfo.price?.original.toFixed(2)}</Text>}
+                        {(dealInfo.offerValidUntil || dealInfo.runTill) && (
+                          <Text style={[styles.dealExpiry, 
+                            calculateDaysUntilExpiry(dealInfo.offerValidUntil || dealInfo.runTill).includes('Expired') && styles.dealExpired
+                          ]}>
+                            {calculateDaysUntilExpiry(dealInfo.offerValidUntil || dealInfo.runTill)}
+                          </Text>
+                        )}
                       </View>
                       {dealInfo.imageUrl && (
                         <View style={styles.dealImageColumn}>
@@ -492,6 +532,10 @@ dealDiscount: {
 dealExpiry: {
   fontSize: 12,
   color: '#999',
+},
+dealExpired: {
+  color: '#dc3545',
+  fontWeight: 'bold',
 },
 dealItem: {
   marginBottom: 15,

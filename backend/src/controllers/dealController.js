@@ -13,28 +13,32 @@ async function findDeals(req, res) {
       // Fetch offers from Tjek.com API based on selected dealers
       const tjekOffers = await tjekApiService.fetchTjekOffers(selectedDealerIds);
 
-    // Add these debug lines
-      console.log('tjekOffers type:', typeof tjekOffers);
-      console.log('tjekOffers is array:', Array.isArray(tjekOffers));
-
       let allAvailableDeals = [];
 
       tjekOffers.forEach(offer => {
           // Only include offers that have a price and a dealer name
           if (offer.pricing && offer.pricing.price && offer.dealer && offer.dealer.name) {
-              allAvailableDeals.push({
+allAvailableDeals.push({
                   source: 'squid-api',
                   id: offer.id, // Include offer ID for unique identification
-                  productDescription: offer.heading,
-                  offerHeading: offer.description || offer.heading,
-                  newPrice: offer.pricing.price,
-                  originalPrice: offer.pricing.pre_price || offer.pricing.price, // Use pre_price if available, otherwise use price
+                  productName: offer.heading,
+                  productDescription: offer.description,
+                  price: {
+                    original: offer.pricing.pre_price,
+                    current: offer.pricing.price,
+                    currency: offer.pricing.currency
+                  },
+                  quantity: {
+                    sizeFrom: offer.quantity.size.from,
+                    sizeTo: offer.quantity.size.to,
+                    unit: offer.quantity.size_unit
+                  },
                   imageUrl: offer.images.view,
-                  validUntil: offer.run_till,
-                  store: {
-                      brand: offer.dealer.name,
-                      address: 'Nationwide offer (Tjek.com API)', // Clarify address
-                      id: offer.dealer.id
+                  offerValidFrom: offer.run_from,
+                  offerValidUntil: offer.run_till,
+                  dealer: {
+                      id: offer.dealer.id,
+                      name: offer.dealer.name
                   }
               });
           }
@@ -45,7 +49,7 @@ async function findDeals(req, res) {
       }
 
       // Pass the combined and flattened data to the LLM
-      const finalResponse = await geminiService.findBestDealsWithLLM(selectedProducts, allAvailableDeals);
+      const finalResponse = await geminiService.findSelectedDealsWithLLM(selectedProducts, allAvailableDeals);
 
       res.json(finalResponse);
 
@@ -57,13 +61,55 @@ async function findDeals(req, res) {
 
 async function getAllDeals(req, res) {
   try {
-      const allDeals = await tjekApiService.fetchAllDeals();
-      res.json(allDeals);
+      // Fetch offers from Tjek.com API based on selected dealers
+      const tjekOffers = await tjekApiService.fetchTjekOffers([]);
+
+      let allAvailableDeals = [];
+
+      tjekOffers.forEach(offer => {
+          // Only include offers that have a price and a dealer name
+          if (offer.pricing && offer.pricing.price && offer.dealer && offer.dealer.name) {
+allAvailableDeals.push({
+                  source: 'squid-api',
+                  id: offer.id, // Include offer ID for unique identification
+                  productName: offer.heading,
+                  productDescription: offer.description,
+                  price: {
+                    original: offer.pricing.pre_price,
+                    current: offer.pricing.price,
+                    currency: offer.pricing.currency
+                  },
+                  quantity: {
+                    sizeFrom: offer.quantity.size.from,
+                    sizeTo: offer.quantity.size.to,
+                    unit: offer.quantity.size_unit
+                  },
+                  imageUrl: offer.images.view,
+                  offerValidFrom: offer.run_from,
+                  offerValidUntil: offer.run_till,
+                  dealer: {
+                      id: offer.dealer.id,
+                      name: offer.dealer.name
+                  }
+              });
+          }
+      });
+
+      if (allAvailableDeals.length === 0) {
+          return res.status(404).json({ error: 'No active deals found for your selected products and dealers.' });
+      }
+
+      // Pass the combined and flattened data to the LLM
+      const finalResponse = await geminiService.findDealsWithoutLLM(allAvailableDeals);
+
+      res.json(finalResponse);
+
   } catch (error) {
-      console.error('Error fetching all deals:', error.message);
+      console.error('Error in /deals endpoint:', error.message);
       res.status(500).json({ error: error.message });
   }
 }
+
 
 // async function getUserProfile(req, res) {
 //   // Implementation for getting user profile

@@ -8,17 +8,15 @@ const { saveJsonToFile } = require('../utils/fileLogger');
 // without dealer_id/dealer_ids, or with different parameters.
 const TJEK_API_BASE_URL = 'https://squid-api.tjek.com/v2/offers';
 
-async function fetchTjekOffers(dealerIds = []) {
+async function fetchTjekOffers(dealerIds = [], limit = 100) {
 console.log('Starting Tjek.com API fetch...');
 try {
     const params = {
         country_code: 'DK',
-        limit: 100 // Fetch a reasonable number of offers
+        limit: limit // TODO: Fetch a reasonable number of offers
     };
 
     if (dealerIds.length > 0) {
-        // If you found an endpoint that takes multiple dealer_ids, use that.
-        // Otherwise, you might need to loop through dealerIds and make separate calls.
         params.dealer_ids = dealerIds.join(','); // This assumes the API supports comma-separated IDs
     }
 
@@ -40,15 +38,15 @@ try {
         const hasPricing = offer.pricing;
         const hasPrice = offer.pricing && offer.pricing.price;
         
-        console.log(`Offer ${index}:`, {
-            hasDealer,
-            hasCountry,
-            isDK,
-            hasPricing,
-            hasPrice,
-            countryId: offer.dealer?.country?.id,
-            price: offer.pricing?.price
-        });
+        // console.log(`Offer ${index}:`, {
+        //     hasDealer,
+        //     hasCountry,
+        //     isDK,
+        //     hasPricing,
+        //     hasPrice,
+        //     countryId: offer.dealer?.country?.id,
+        //     price: offer.pricing?.price
+        // });
         
         return {
             hasDealer,
