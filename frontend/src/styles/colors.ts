@@ -9,6 +9,8 @@ export const colors = {
   background: '#F9F9F9',     // Light neutral - clean shopping experience
   surface: '#FFFFFF',        // White - for cards, inputs, etc.
   error: '#F44336',          // Red - for errors and alerts
+  success: '#4CAF50',        // Green - for success messages and positive values
+  warning: '#FF9800',        // Orange - for warnings and urgent items
   text: {
     primary: '#212121',      // Dark gray - for primary text
     secondary: '#757575',    // Medium gray - for secondary text

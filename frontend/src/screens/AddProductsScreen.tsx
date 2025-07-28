@@ -157,7 +157,7 @@ return (
           </Text>
         </TouchableOpacity>
 
-        {expandedCategory === category.name && (
+        {expandedCategory === category.name ? (
           <View style={styles.variantsGrid}>
             {category.variants.map((variant) => {
               const disabled = isVariantInWatchlist(variant.name, category);
@@ -166,16 +166,16 @@ return (
                   key={variant.name}
                   style={[
                     styles.variantButton,
-                    selectedVariants[variant.name] && styles.variantButtonSelected,
-                    disabled && styles.variantButtonDisabled,
+                    selectedVariants[variant.name] ? styles.variantButtonSelected : {},
+                    disabled ? styles.variantButtonDisabled : {},
                   ]}
                   onPress={() => !disabled && handleToggleVariant(variant.name)}
                   disabled={disabled}
                 >
                   <Text style={[
                     styles.variantButtonText,
-                    selectedVariants[variant.name] ? { color: colors.text.inverse } : null,
-                    disabled ? { color: colors.text.muted } : null
+                    selectedVariants[variant.name] ? { color: colors.text.inverse } : {},
+                    disabled ? { color: colors.text.muted } : {}
                   ]}>
                     {variant.name}{disabled ? ' (Already added)' : ''}
                   </Text>
@@ -183,7 +183,7 @@ return (
               );
             })}
           </View>
-        )}
+        ) : null}
       </View>
     ))}
 
@@ -191,7 +191,7 @@ return (
       style={[
         styles.addButton,
         (loading || Object.keys(selectedVariants).filter(name => selectedVariants[name]).length === 0) ? 
-        styles.disabledButton : null
+        styles.disabledButton : {}
       ]}
       onPress={handleAddSelectedToWatchlist}
       disabled={loading || Object.keys(selectedVariants).filter(name => selectedVariants[name]).length === 0}

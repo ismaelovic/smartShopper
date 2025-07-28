@@ -5,6 +5,7 @@ import DealFinderScreen from './screens/DealFinderScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AddProductsScreen from './screens/AddProductsScreen';
 import WatchlistScreen from './screens/WatchlistScreen';
+import ShoppingCartScreen from './screens/ShoppingCartScreen';
 import RegistrationForm from './components/RegistrationForm';
 import LoginForm from './components/LoginForm';
 import { colors } from './styles/colors';
@@ -130,6 +131,13 @@ return (
           </TouchableOpacity>
           
           <TouchableOpacity
+            style={[styles.navButton, currentScreen === 'cart' ? styles.activeNavButton : {}]}
+            onPress={() => setCurrentScreen('cart')}
+          >
+            <Text style={[styles.navButtonText, currentScreen === 'cart' ? styles.activeNavText : {}]}>Cart</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
             style={[styles.navButton, currentScreen === 'addProducts' ? styles.activeNavButton : {}]}
             onPress={() => setCurrentScreen('addProducts')}
           >
@@ -156,6 +164,9 @@ return (
         )}
         {currentScreen === 'watchlist' && (
           <WatchlistScreen firebaseUser={firebaseUser} API_BASE_URL={API_BASE_URL} />
+        )}
+        {currentScreen === 'cart' && (
+          <ShoppingCartScreen firebaseUser={firebaseUser} API_BASE_URL={API_BASE_URL} />
         )}
         {currentScreen === 'addProducts' && (
           <AddProductsScreen firebaseUser={firebaseUser} API_BASE_URL={API_BASE_URL} />

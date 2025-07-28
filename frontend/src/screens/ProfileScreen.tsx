@@ -173,7 +173,7 @@ return (
     {isEditing ? (
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
-          style={[styles.saveButton, saving && styles.disabledButton]} 
+          style={[styles.saveButton, saving ? styles.disabledButton : {}]} 
           onPress={handleSaveProfile} 
           disabled={saving}
         >

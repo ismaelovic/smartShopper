@@ -4,6 +4,7 @@ import { colors } from '../styles/colors';
 import DealerSelection from '../components/DealerSelection';
 import TrendingDealsCarousel from '../components/TrendingDealsCarousel';
 import { fetchDeals } from '../services/apiService';
+import { addToShoppingCart } from '../services/shoppingCartService';
 import { User } from 'firebase/auth';
 
 // Enable LayoutAnimation for Android
@@ -176,7 +177,7 @@ const handleFindDeals = async () => {
   }
 };
 
-const handleAddDealToWatchlist = async (deal: DealInfo) => {
+const handleAddDealToWatchlist = async (deal: any) => {
   if (!firebaseUser) {
     // Alert.alert('Authentication Required', 'Please log in to add items to your watchlist.');
     return;
@@ -207,6 +208,49 @@ const handleAddDealToWatchlist = async (deal: DealInfo) => {
   }
 };
 
+const handleAddDealToCart = async (deal: any) => {
+  if (!firebaseUser) {
+    Alert.alert('Authentication Required', 'Please log in to add items to your cart.');
+    return;
+  }
+
+  try {
+    // Handle different deal formats from different sources
+    const productName = deal.productName || deal.heading;
+    const productDescription = deal.productDescription || deal.description;
+    const price = deal.price?.current || deal.price;
+    const originalPrice = deal.price?.original;
+    const currency = deal.price?.currency || 'kr';
+    const store = deal.dealer?.name || deal.store;
+    const storeAddress = deal.storeAddress;
+    const imageUrl = deal.images?.view || deal.imageUrl;
+    const validUntil = deal.validUntil || deal.offerValidUntil;
+
+    await addToShoppingCart(firebaseUser, API_BASE_URL, {
+      id: deal.id,
+      productName,
+      productDescription,
+      price: {
+        original: originalPrice,
+        current: price,
+        currency
+      },
+      dealer: {
+        id: deal.dealer?.id || deal.storeId,
+        name: store
+      },
+      imageUrl,
+      offerValidUntil: validUntil,
+      quantity: deal.quantity || { sizeFrom: 1, sizeTo: 1, unit: 'pcs' }
+    });
+    
+    Alert.alert('Success', 'Deal added to your shopping cart!');
+  } catch (error: any) {
+    console.error('Error adding deal to cart:', error);
+    Alert.alert('Error', `Failed to add deal to cart: ${error.message}`);
+  }
+};
+
 if (loadingWatchlist) {
   return (
     <View style={styles.centered}>
@@ -233,6 +277,7 @@ return (
             `${deal.productName}\nPrice: ${deal.price.current} kr\nStore: ${deal.dealer?.name || deal.dealer?.id}`,
             [
               { text: 'Add to Watchlist', onPress: () => handleAddDealToWatchlist(deal) },
+              { text: 'Add to Cart', onPress: () => handleAddDealToCart(deal) },
               { text: 'Cancel', style: 'cancel' }
             ]
           );
@@ -258,28 +303,28 @@ return (
                 </Text>
               </TouchableOpacity>
 
-              {expandedCategory === categoryName && (
+              {expandedCategory === categoryName ? (
                 <View style={styles.variantsGrid}>
                   {groupedWatchlist[categoryName].map((item) => (
                     <TouchableOpacity
                       key={item.id}
                       style={[
                         styles.productButton,
-                        selectedProductNames.includes(item.productName) && styles.productButtonSelected,
+                        selectedProductNames.includes(item.productName) ? styles.productButtonSelected : {},
                       ]}
                       onPress={() => handleToggleWatchlistItem(item.productName)}
                     >
-                      {item.displayImageUrl && (
+                      {item.displayImageUrl ? (
                         <Image source={{ uri: item.displayImageUrl }} style={styles.productImage} />
-                      )}
+                      ) : null}
                       <Text style={styles.productButtonText}>{item.productName}</Text>
-                      {item.productCategory && (
+                      {item.productCategory ? (
                         <Text style={styles.productButtonCategory}>{item.productCategory}</Text>
-                      )}
+                      ) : null}
                     </TouchableOpacity>
                   ))}
                 </View>
-              )}
+              ) : null}
             </View>
           ))
         )}
@@ -290,7 +335,7 @@ return (
         <DealerSelection
           dealers={allDealers}
           selectedDealerIds={selectedDealerIds}
-          onDealerToggle={(dealerId) => {
+          onDealerToggle={(dealerId: string) => {
             setSelectedDealerIds((prev) =>
               prev.includes(dealerId)
                 ? prev.filter((id) => id !== dealerId)
@@ -300,9 +345,9 @@ return (
         />
       </View>
 
-      {loadingDeals && <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />}
+      {loadingDeals ? <ActivityIndicator size="large" color="#0000ff" style={styles.loader} /> : null}
 
-      {deals && (
+      {deals ? (
         <View style={styles.resultsContainer}>
           <Text style={styles.resultsHeader}>Your Deals:</Text>
           {Object.keys(deals).length > 0 ? (
@@ -317,23 +362,23 @@ return (
                       <View style={styles.dealInfoColumn}>
                         <Text style={styles.dealPrice}>Price: DKK {dealInfo.price?.current.toFixed(2)}</Text>
                         <Text style={styles.dealStore}>Dealer: {dealInfo.dealer?.name}</Text>
-                        {dealInfo.originalPrice && <Text style={styles.dealDiscount}>Original: DKK {dealInfo.price?.original.toFixed(2)}</Text>}
-                        {(dealInfo.offerValidUntil || dealInfo.runTill) && (
+                        {dealInfo.originalPrice ? <Text style={styles.dealDiscount}>Original: DKK {dealInfo.price?.original.toFixed(2)}</Text> : null}
+                        {(dealInfo.offerValidUntil || dealInfo.runTill) ? (
                           <Text style={[styles.dealExpiry, 
-                            calculateDaysUntilExpiry(dealInfo.offerValidUntil || dealInfo.runTill).includes('Expired') && styles.dealExpired
+                            calculateDaysUntilExpiry(dealInfo.offerValidUntil || dealInfo.runTill).includes('Expired') ? styles.dealExpired : {}
                           ]}>
                             {calculateDaysUntilExpiry(dealInfo.offerValidUntil || dealInfo.runTill)}
                           </Text>
-                        )}
+                        ) : null}
                       </View>
-                      {dealInfo.imageUrl && (
+                      {dealInfo.imageUrl ? (
                         <View style={styles.dealImageColumn}>
                           <Image
                             source={{ uri: dealInfo.imageUrl }}
                             style={styles.dealImage}
                           />
                         </View>
-                      )}
+                      ) : null}
                     </View>
                     <TouchableOpacity
                       style={styles.addToWatchlistButton}
@@ -349,7 +394,7 @@ return (
             <Text style={styles.noDeals}>No deals found for your selected products and dealers.</Text>
           )}
         </View>
-      )}
+      ) : null}
     </ScrollView>
 
     {/* Fixed Bottom Action Bar */}
@@ -360,7 +405,7 @@ return (
       <TouchableOpacity
         style={[
           styles.findDealsButton,
-          (loadingDeals || selectedProductNames.length === 0) && styles.disabledButton
+          (loadingDeals || selectedProductNames.length === 0) ? styles.disabledButton : {}
         ]}
         onPress={handleFindDeals}
         disabled={loadingDeals || selectedProductNames.length === 0}

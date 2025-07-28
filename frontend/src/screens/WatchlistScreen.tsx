@@ -142,12 +142,12 @@ return (
           </View>
 
           <View style={styles.itemDetails}>
-            {item.originalDealerName && item.currentPrice && (
+            {item.originalDealerName && item.currentPrice ? (
               <Text style={styles.itemPrice}>
                 {item.originalDealerName}: DKK {item.currentPrice.toFixed(2)}
-                {item.originalPrice && <Text style={styles.itemOriginalPrice}> (Org: {item.originalPrice.toFixed(2)})</Text>}
+                {item.originalPrice ? <Text style={styles.itemOriginalPrice}> (Org: {item.originalPrice.toFixed(2)})</Text> : null}
               </Text>
-            )}
+            ) : null}
             <Text style={styles.itemAddedAt}>Added: {new Date(item.addedAt._seconds * 1000).toLocaleDateString()}</Text>
           </View>
 
