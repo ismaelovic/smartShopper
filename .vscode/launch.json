@@ -1,0 +1,39 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Backend",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/backend/src/app.js",
+            "cwd": "${workspaceFolder}/backend",
+            "envFile": "${workspaceFolder}/backend/.env",
+            "runtimeExecutable": "/usr/local/bin/node"
+        },
+        {
+            "name": "Attach to Expo",
+            "type": "node",
+            "request": "attach",
+            "port": 19000,
+            "address": "localhost",
+            "localRoot": "${workspaceFolder}/frontend",
+            "remoteRoot": "${workspaceFolder}/frontend",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "cwd": "${workspaceFolder}/frontend"
+        },
+       {
+    "name": "Debug Expo (Hermes)",
+    "type": "node",
+    "request": "attach",
+    "address": "localhost",
+    "port": 8081,
+    "skipFiles": ["<node_internals>/**"],
+    "cwd": "${workspaceFolder}/frontend"
+}
+    ]
+}

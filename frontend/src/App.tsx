@@ -8,6 +8,7 @@ import WatchlistScreen from './screens/WatchlistScreen';
 import ShoppingCartScreen from './screens/ShoppingCartScreen';
 import RegistrationForm from './components/RegistrationForm';
 import LoginForm from './components/LoginForm';
+import HomeScreen from './screens/HomeScreen';
 import { colors } from './styles/colors';
 
 import { auth } from './config/firebaseConfig';
@@ -25,7 +26,7 @@ const [isAuthenticated, setIsAuthenticated] = useState(false);
 const [firebaseUser, setFirebaseUser] = useState<any>(null);
 const [loading, setLoading] = useState(true);
 const [currentScreen, setCurrentScreen] = useState('dealFinder');
-const [authScreen, setAuthScreen] = useState('login'); // 'login' or 'register'
+const [authScreen, setAuthScreen] = useState<'home' | 'login' | 'register'>('home');
 
 type RegisterParams = {
   email: string;
@@ -104,7 +105,7 @@ const handleLogout = async () => {
 if (loading) {
   return (
     <SafeAreaView style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#0000ff" />
+      <ActivityIndicator size="large" color={colors.primary} />
       <Text>Checking authentication status...</Text>
     </SafeAreaView>
   );
@@ -113,7 +114,7 @@ if (loading) {
 return (
   <SafeAreaView style={styles.container}>
     {isAuthenticated ? (
-      // Explicitly wrap the authenticated content in a View or Fragment
+      // Authenticated content
       <React.Fragment>
         <View style={styles.navBar}>
           <TouchableOpacity
@@ -122,35 +123,30 @@ return (
           >
             <Text style={[styles.navButtonText, currentScreen === 'dealFinder' ? styles.activeNavText : {}]}>Deals</Text>
           </TouchableOpacity>
-          
           <TouchableOpacity
             style={[styles.navButton, currentScreen === 'watchlist' ? styles.activeNavButton : {}]}
             onPress={() => setCurrentScreen('watchlist')}
           >
             <Text style={[styles.navButtonText, currentScreen === 'watchlist' ? styles.activeNavText : {}]}>Watchlist</Text>
           </TouchableOpacity>
-          
           <TouchableOpacity
             style={[styles.navButton, currentScreen === 'cart' ? styles.activeNavButton : {}]}
             onPress={() => setCurrentScreen('cart')}
           >
             <Text style={[styles.navButtonText, currentScreen === 'cart' ? styles.activeNavText : {}]}>Cart</Text>
           </TouchableOpacity>
-          
           <TouchableOpacity
             style={[styles.navButton, currentScreen === 'addProducts' ? styles.activeNavButton : {}]}
             onPress={() => setCurrentScreen('addProducts')}
           >
             <Text style={[styles.navButtonText, currentScreen === 'addProducts' ? styles.activeNavText : {}]}>Add Products</Text>
           </TouchableOpacity>
-          
           <TouchableOpacity
             style={[styles.navButton, currentScreen === 'profile' ? styles.activeNavButton : {}]}
             onPress={() => setCurrentScreen('profile')}
           >
             <Text style={[styles.navButtonText, currentScreen === 'profile' ? styles.activeNavText : {}]}>Profile</Text>
           </TouchableOpacity>
-          
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={handleLogout}
@@ -158,7 +154,6 @@ return (
             <Text style={styles.logoutButtonText}>Logout</Text>
           </TouchableOpacity>
         </View>
-
         {currentScreen === 'dealFinder' && (
           <DealFinderScreen firebaseUser={firebaseUser} API_BASE_URL={API_BASE_URL} />
         )}
@@ -176,18 +171,38 @@ return (
         )}
       </React.Fragment>
     ) : (
-      // Authentication screens
+      // Home, Login, Register screens for unauthenticated users
       <React.Fragment>
-        {authScreen === 'login' ? (
-          <LoginForm 
-            onLogin={handleLogin} 
-            onSwitchToRegister={() => setAuthScreen('register')} 
-          />
-        ) : (
-          <RegistrationForm 
-            onRegister={handleRegister} 
-            onSwitchToLogin={() => setAuthScreen('login')} 
-          />
+        {authScreen === 'home' && (
+          <HomeScreen onCTAPress={() => setAuthScreen('login')} />
+        )}
+        {authScreen === 'login' && (
+          <>
+            <LoginForm 
+              onLogin={handleLogin} 
+              onSwitchToRegister={() => setAuthScreen('register')} 
+            />
+            <TouchableOpacity onPress={() => setAuthScreen('register')} style={{ marginTop: 16, alignSelf: 'center' }}>
+              <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Don't have an account? Register</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setAuthScreen('home')} style={{ marginTop: 8, alignSelf: 'center' }}>
+              <Text style={{ color: colors.primary }}>Back to Home</Text>
+            </TouchableOpacity>
+          </>
+        )}
+        {authScreen === 'register' && (
+          <>
+            <RegistrationForm 
+              onRegister={handleRegister} 
+              onSwitchToLogin={() => setAuthScreen('login')} 
+            />
+            <TouchableOpacity onPress={() => setAuthScreen('login')} style={{ marginTop: 16, alignSelf: 'center' }}>
+              <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Already have an account? Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setAuthScreen('home')} style={{ marginTop: 8, alignSelf: 'center' }}>
+              <Text style={{ color: colors.primary }}>Back to Home</Text>
+            </TouchableOpacity>
+          </>
         )}
       </React.Fragment>
     )}
@@ -218,9 +233,9 @@ navBar: {
   justifyContent: 'space-around',
   paddingVertical: 12,
   borderBottomWidth: 1,
-  borderBottomColor: colors.border,
+  borderBottomColor: colors.secondary,
   width: '100%',
-  backgroundColor: colors.surface,
+  backgroundColor: colors.primary,
 },
 navButton: {
   paddingVertical: 8,

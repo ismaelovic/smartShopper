@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+      {
+          "label": "Start Frontend Dev Server", // Name of the task
+          "type": "shell",
+          "command": "npx expo start --host localhost", // The command to execute
+          "options": {
+              "cwd": "${workspaceFolder}/frontend" // Run this command in the frontend directory
+          },
+          "isBackground": true, // This tells VS Code the task will run continuously in the background
+          "group": "build"
+      }
+  ]
+}
